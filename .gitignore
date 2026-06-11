@@ -1,0 +1,6 @@
+bin/
+obj/
+.vs/
+beam-sdk/
+*.user
+*.suo
