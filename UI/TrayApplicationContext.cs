@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Drawing;
+using System.Reflection;
 using System.Windows.Forms;
 using GazeStick.Helpers;
 using GazeStick.Models;
@@ -15,6 +16,7 @@ public sealed class TrayApplicationContext : ApplicationContext
     private readonly IVirtualPadService _pad;
     private readonly ITrackingService _tracker;
     private readonly HotkeyWindow _hotkeyWindow;
+    private readonly Icon _appIcon;
     private HotkeyManager? _hotkey;
     private PopupPanel? _popup;
     private bool _isActive;
@@ -24,6 +26,8 @@ public sealed class TrayApplicationContext : ApplicationContext
 
     public TrayApplicationContext()
     {
+        _appIcon = LoadAppIcon();
+
         _settings = SettingsManager.Load();
         _mapper = new StickMapper();
         _pad = new VirtualPadService();
@@ -32,8 +36,8 @@ public sealed class TrayApplicationContext : ApplicationContext
 
         _trayIcon = new NotifyIcon
         {
-            Icon = CreateIcon(Color.Orange),
-            Text = "GazeStick — Beam 대기 중",
+            Icon = _appIcon,
+            Text = "GazeStick — Awaiting Beam",
             Visible = true,
         };
         _trayIcon.MouseClick += OnTrayMouseClick;
@@ -50,12 +54,23 @@ public sealed class TrayApplicationContext : ApplicationContext
         InitializeServices();
     }
 
+    private static Icon LoadAppIcon()
+    {
+        try
+        {
+            using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("GazeStick.Resources.icon.ico");
+            if (stream != null)
+                return new Icon(stream);
+        }
+        catch { }
+        return SystemIcons.Application;
+    }
+
     private void InitializeServices()
     {
         if (!_pad.Initialize(_settings.PadSlot))
         {
-            _trayIcon.Icon = CreateIcon(Color.Red);
-            _trayIcon.Text = "GazeStick — ViGEm 오류";
+            _trayIcon.Text = "GazeStick — ViGEm Error";
             var result = MessageBox.Show(
                 "ViGEmBus 드라이버가 설치되지 않았거나 연결할 수 없습니다.\n\n" +
                 "게임패드 가상화에 필요합니다. 설치하시겠습니까?",
@@ -80,7 +95,7 @@ public sealed class TrayApplicationContext : ApplicationContext
         _tracker.Start();
 
         _isActive = _settings.StartActive;
-        UpdateTrayIcon();
+        UpdateTrayText();
 
         _hotkey = new HotkeyManager(_hotkeyWindow.Handle);
         if (!string.IsNullOrEmpty(_settings.ToggleHotkey))
@@ -116,12 +131,15 @@ public sealed class TrayApplicationContext : ApplicationContext
             StartReconnectTimer();
         }
 
-        UpdateTrayIcon();
+        UpdateTrayText();
     }
 
     private void OnError(string message)
     {
-        _trayIcon.Text = $"GazeStick — {message}";
+        var text = $"GazeStick — {message}";
+        if (text.Length > 128)
+            text = text[..125] + "...";
+        _trayIcon.Text = text;
         _trayIcon.ShowBalloonTip(3000, "GazeStick", message, ToolTipIcon.Warning);
     }
 
@@ -141,46 +159,28 @@ public sealed class TrayApplicationContext : ApplicationContext
             _mapper.Reset();
             _pad.Reset();
         }
-        UpdateTrayIcon();
+        UpdateTrayText();
         if (_popup != null && !_popup.IsDisposed)
             _popup.IsActive = _isActive;
     }
 
-    private void UpdateTrayIcon()
+    private void UpdateTrayText()
     {
-        Color color;
         string status;
 
         if (!_tracker.IsConnected)
-        {
-            color = Color.Orange;
-            status = "Beam 대기 중";
-        }
+            status = "Awaiting Beam";
         else if (!_isActive)
-        {
-            color = Color.Orange;
             status = "OFF";
-        }
         else
-        {
-            color = Color.LimeGreen;
             status = "ON";
-        }
 
-        _trayIcon.Icon = CreateIcon(color);
-        _trayIcon.Text = $"GazeStick — {status} (슬롯 #{_pad.CurrentSlot})";
+        _trayIcon.Text = $"GazeStick — {status} (Slot #{_pad.CurrentSlot})";
     }
 
     private void OnTrayMouseClick(object? sender, MouseEventArgs e)
     {
-        if (e.Button == MouseButtons.Left)
-        {
-            ToggleActive();
-        }
-        else if (e.Button == MouseButtons.Right)
-        {
-            ShowPopup();
-        }
+        ShowPopup();
     }
 
     private void ShowPopup()
@@ -201,6 +201,9 @@ public sealed class TrayApplicationContext : ApplicationContext
             Curve = _settings.Curve,
             CurvePower = _settings.CurvePower,
             AutoStart = _settings.StartWithWindows,
+            DeadzoneValue = _settings.Deadzone,
+            SensitivityValue = _settings.Sensitivity,
+            SmoothingValue = _settings.Smoothing,
         };
 
         _popup.DeadzoneChanged += v => { _settings.Deadzone = v; SettingsManager.Save(_settings); };
@@ -216,7 +219,7 @@ public sealed class TrayApplicationContext : ApplicationContext
             AutoStartManager.SetEnabled(v);
         };
         _popup.ResetRequested += ResetSettings;
-        _popup.ToggleChanged += v => { _isActive = v; UpdateTrayIcon(); if (!v) _pad.Reset(); };
+        _popup.ToggleChanged += v => { _isActive = v; UpdateTrayText(); if (!v) _pad.Reset(); };
         _popup.ExitRequested += ExitApplication;
         _popup.HotkeyChanged += key =>
         {
@@ -233,9 +236,12 @@ public sealed class TrayApplicationContext : ApplicationContext
         };
 
         var cursorPos = Cursor.Position;
-        _popup.Location = new Point(
-            cursorPos.X - _popup.Width / 2,
-            cursorPos.Y - _popup.Height - 10);
+        var screen = Screen.FromPoint(cursorPos).WorkingArea;
+        int x = cursorPos.X - _popup.Width / 2;
+        int y = cursorPos.Y - _popup.Height - 10;
+        x = Math.Clamp(x, screen.Left, screen.Right - _popup.Width);
+        y = Math.Max(y, screen.Top);
+        _popup.Location = new Point(x, y);
 
         _popup.Show();
     }
@@ -297,23 +303,9 @@ public sealed class TrayApplicationContext : ApplicationContext
         _tracker.Dispose();
         _pad.Reset();
         _pad.Dispose();
+        _appIcon.Dispose();
 
         Application.Exit();
-    }
-
-    private static Icon CreateIcon(Color color)
-    {
-        var bmp = new Bitmap(16, 16);
-        using var g = Graphics.FromImage(bmp);
-        g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-
-        int cx = 8, cy = 8;
-        g.DrawEllipse(new Pen(color, 1.5f), 1, 4, 14, 8);
-        g.FillEllipse(new SolidBrush(color), cx - 1, cy - 1, 3, 3);
-        g.DrawLine(new Pen(color, 1.5f), 1, cy, 15, cy);
-        g.DrawEllipse(new Pen(color, 1f), 0, 3, 16, 10);
-
-        return Icon.FromHandle(bmp.GetHicon());
     }
 
     protected override void Dispose(bool disposing)
@@ -328,6 +320,7 @@ public sealed class TrayApplicationContext : ApplicationContext
                 _reconnectTimer?.Dispose();
                 _tracker?.Dispose();
                 _pad?.Dispose();
+                _appIcon?.Dispose();
             }
             _disposed = true;
         }
@@ -346,7 +339,6 @@ public sealed class TrayApplicationContext : ApplicationContext
                 Style = 0,
                 ExStyle = 0,
                 Parent = IntPtr.Zero,
-                ClassName = "GazeStickHotkeyWindow",
             });
         }
 

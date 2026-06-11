@@ -59,8 +59,10 @@ public sealed class StickMapper
         if (settings.InvertY)
             ny = -ny;
 
-        short stickX = (short)Math.Round(nx * 32767);
-        short stickY = (short)Math.Round(-ny * 32767);
+        int rawX = (int)Math.Round(nx * 32767);
+        int rawY = (int)Math.Round(-ny * 32767);
+        short stickX = (short)Math.Clamp(rawX, short.MinValue, short.MaxValue);
+        short stickY = (short)Math.Clamp(rawY, short.MinValue, short.MaxValue);
 
         return new StickOutput(stickX, stickY);
     }

@@ -103,7 +103,7 @@ public class NumericAdjuster : UserControl
         _btnPlus.Click += (_, _) => AdjustValue(_step);
         _btnPlus.MouseDown += (_, _) => _btnPlus.FlatAppearance.MouseDownBackColor = Color.FromArgb(70, 70, 75);
 
-        _toolTip.SetToolTip(_valuePanel, "드래그하여 연속 조정");
+        _toolTip.SetToolTip(_valuePanel, "Drag to adjust continuously");
 
         Controls.AddRange(new Control[] { _btnMinus, _valuePanel, _btnPlus });
     }

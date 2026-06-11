@@ -62,20 +62,21 @@ public sealed class BeamTrackingService : ITrackingService
 
     private void PollGaze(object? state)
     {
-        if (_api == null || _disposed) return;
+        var api = _api;
+        if (api == null || _disposed) return;
 
         try
         {
-            var status = _api.GetTrackingDataReceptionStatus();
+            var status = api.GetTrackingDataReceptionStatus();
             SetConnected(status == TrackingDataReceptionStatus.ReceivingTrackingData);
 
             if (status != TrackingDataReceptionStatus.ReceivingTrackingData)
                 return;
 
-            bool hasNewData = _api.WaitForNewTrackingData(ref _lastTimestamp, 1);
+            bool hasNewData = api.WaitForNewTrackingData(ref _lastTimestamp, 1);
             if (!hasNewData) return;
 
-            using var stateSet = _api.GetLatestTrackingStateSet();
+            using var stateSet = api.GetLatestTrackingStateSet();
             var userState = stateSet.UserState;
 
             if (userState.TimestampInSeconds == Constants.NullDataTimestamp)

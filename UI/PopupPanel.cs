@@ -60,7 +60,7 @@ public class PopupPanel : Form
     public int PadSlot
     {
         get => _padSlot;
-        set { _padSlot = value; _lblSlotInfo.Text = $"슬롯 #{value}"; }
+        set { _padSlot = value; _lblSlotInfo.Text = $"Slot #{value}"; }
     }
 
     public string HotkeyText
@@ -85,6 +85,21 @@ public class PopupPanel : Form
         set => _curvePowerCtrl.Value = value;
     }
 
+    public double DeadzoneValue
+    {
+        set => _deadzoneCtrl.Value = value;
+    }
+
+    public double SensitivityValue
+    {
+        set => _sensitivityCtrl.Value = value;
+    }
+
+    public double SmoothingValue
+    {
+        set => _smoothingCtrl.Value = value;
+    }
+
     public bool AutoStart
     {
         get => _autoStart;
@@ -98,8 +113,6 @@ public class PopupPanel : Form
         Size = new Size(256, 430);
         BackColor = Color.FromArgb(28, 28, 30);
         ShowInTaskbar = false;
-        TopMost = true;
-        Deactivate += (_, _) => Close();
         KeyPreview = true;
         KeyDown += OnPanelKeyDown;
         Font badgeFont = new Font("Segoe UI", 8f, FontStyle.Bold);
@@ -183,7 +196,7 @@ public class PopupPanel : Form
 
         _lblBeamStatus = new Label
         {
-            Text = "○ Beam 연결됨",
+            Text = "○ Beam Connected",
             Font = new Font("Segoe UI", 8f),
             ForeColor = Color.FromArgb(140, 140, 145),
             AutoSize = true,
@@ -192,7 +205,7 @@ public class PopupPanel : Form
 
         _lblSlotInfo = new Label
         {
-            Text = "슬롯 #2",
+            Text = "Slot #2",
             Font = new Font("Segoe UI", 8f),
             ForeColor = Color.FromArgb(140, 140, 145),
             AutoSize = true,
@@ -207,22 +220,21 @@ public class PopupPanel : Form
         _lblHotkeyBadge = CreateBadge("F9", Color.FromArgb(100, 120, 200), 125, 0);
         _lblHotkeyBadge.Click += (_, _) => StartHotkeyCapture();
 
-        _lblAutoStart = CreateBadge("자동 실행 ON", Color.FromArgb(140, 140, 145), 0, 36);
+        _lblAutoStart = CreateBadge("Auto ON", Color.FromArgb(140, 140, 145), 0, 36);
         _lblAutoStart.Click += (_, _) => { _autoStart = !_autoStart; UpdateAutoStartBadge(); AutoStartChanged?.Invoke(_autoStart); };
 
-        _lblReset = CreateBadge("설정 초기화", Color.FromArgb(200, 150, 80), 90, 36);
-
+        _lblReset = CreateBadge("Reset", Color.FromArgb(200, 150, 80), 68, 36);
         _lblReset.Click += (_, _) => ResetRequested?.Invoke();
 
         _btnExit = new Button
         {
-            Text = "종료",
+            Text = "Exit",
             Font = new Font("Segoe UI", 8f),
             ForeColor = Color.FromArgb(200, 80, 80),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
             AutoSize = true,
-            Location = new Point(200, 36),
+            Location = new Point(195, 36),
             Cursor = Cursors.Hand,
         };
         _btnExit.FlatAppearance.BorderSize = 0;
@@ -277,7 +289,7 @@ public class PopupPanel : Form
 
     private void UpdateBeamStatus()
     {
-        _lblBeamStatus.Text = _isBeamConnected ? "● Beam 연결됨" : "○ Beam 없음";
+        _lblBeamStatus.Text = _isBeamConnected ? "● Beam Connected" : "○ Beam Disconnected";
         _lblBeamStatus.ForeColor = _isBeamConnected ? Color.LimeGreen : Color.FromArgb(200, 150, 0);
     }
 
@@ -304,7 +316,7 @@ public class PopupPanel : Form
 
     private void UpdateAutoStartBadge()
     {
-        _lblAutoStart.Text = _autoStart ? "자동 실행 ON" : "자동 실행 OFF";
+        _lblAutoStart.Text = _autoStart ? "Auto ON" : "Auto OFF";
         _lblAutoStart.ForeColor = _autoStart ? Color.FromArgb(100, 180, 100) : Color.FromArgb(140, 140, 145);
     }
 
@@ -325,7 +337,7 @@ public class PopupPanel : Form
     private void StartHotkeyCapture()
     {
         _awaitingHotkey = true;
-        _lblHotkeyBadge.Text = "키 입력...";
+        _lblHotkeyBadge.Text = "Press a key...";
         _lblHotkeyBadge.ForeColor = Color.Yellow;
     }
 
@@ -356,6 +368,17 @@ public class PopupPanel : Form
         base.OnShown(e);
         UpdateState();
         UpdateBeamStatus();
+    }
+
+    protected override void WndProc(ref Message m)
+    {
+        const int WM_ACTIVATE = 0x0006;
+        if (m.Msg == WM_ACTIVATE && (int)m.WParam == 0) // WA_INACTIVE
+        {
+            Close();
+            return;
+        }
+        base.WndProc(ref m);
     }
 
     private class ToggleButton : Control

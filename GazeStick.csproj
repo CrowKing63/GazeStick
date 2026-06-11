@@ -25,6 +25,7 @@
   <ItemGroup>
     <Compile Remove="beam-sdk\**\*.cs" />
     <None Remove="beam-sdk\**\*" />
+    <EmbeddedResource Include="Resources\icon.ico" />
   </ItemGroup>
 
   <Target Name="CopyBeamDll" AfterTargets="AfterBuild">
