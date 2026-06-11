@@ -187,10 +187,14 @@ public class PopupPanel : Form
         y += 42;
 
         // Footer panel
+        // Row 0 (y=0):  BeamStatus(left)   InvertYBadge(right-2)  HotkeyBadge(right)
+        // Row 1 (y=20): SlotInfo(left)
+        // Row 2 (y=44): AutoStart  Reset  [spacer]  Exit(right)
+        const int FW = 240; // footer panel inner width
         var f = new Panel
         {
             Location = new Point(8, y),
-            Size = new Size(240, 68),
+            Size = new Size(FW, 72),
             BackColor = Color.Transparent,
         };
 
@@ -200,7 +204,7 @@ public class PopupPanel : Form
             Font = new Font("Segoe UI", 8f),
             ForeColor = Color.FromArgb(140, 140, 145),
             AutoSize = true,
-            Location = new Point(0, 0),
+            Location = new Point(0, 2),
         };
 
         _lblSlotInfo = new Label
@@ -209,32 +213,61 @@ public class PopupPanel : Form
             Font = new Font("Segoe UI", 8f),
             ForeColor = Color.FromArgb(140, 140, 145),
             AutoSize = true,
-            Location = new Point(0, 18),
+            Location = new Point(0, 22),
             Cursor = Cursors.Hand,
         };
         _lblSlotInfo.Click += (_, _) => SlotChangeRequested?.Invoke();
 
-        _lblInvertYBadge = CreateBadge("Y: Normal", Color.FromArgb(140, 140, 145), 60, 0);
-        _lblInvertYBadge.Click += (_, _) => { _invertY = !_invertY; UpdateInvertYBadge(); InvertYChanged?.Invoke(_invertY); };
+        // Right-align InvertY and Hotkey badges in row 0 with fixed widths
+        // so positions don't shift when text changes (e.g. "Ctrl+F9", "Y: Inverted")
+        const int HotkeyW = 72;
+        const int InvertYW = 72;
+        const int BadgeGap = 4;
 
-        _lblHotkeyBadge = CreateBadge("F9", Color.FromArgb(100, 120, 200), 125, 0);
+        _lblHotkeyBadge = new Label
+        {
+            Text = "F9",
+            Font = new Font("Segoe UI", 8f, FontStyle.Bold),
+            ForeColor = Color.FromArgb(100, 120, 200),
+            BackColor = Color.FromArgb(40, 40, 45),
+            Size = new Size(HotkeyW, 18),
+            Padding = new Padding(4, 2, 4, 2),
+            Location = new Point(FW - HotkeyW, 0),
+            TextAlign = ContentAlignment.MiddleCenter,
+            Cursor = Cursors.Hand,
+        };
         _lblHotkeyBadge.Click += (_, _) => StartHotkeyCapture();
 
-        _lblAutoStart = CreateBadge("Auto ON", Color.FromArgb(140, 140, 145), 0, 36);
+        _lblInvertYBadge = new Label
+        {
+            Text = "Y: Normal",
+            Font = new Font("Segoe UI", 8f, FontStyle.Bold),
+            ForeColor = Color.FromArgb(140, 140, 145),
+            BackColor = Color.FromArgb(40, 40, 45),
+            Size = new Size(InvertYW, 18),
+            Padding = new Padding(4, 2, 4, 2),
+            Location = new Point(FW - HotkeyW - BadgeGap - InvertYW, 0),
+            TextAlign = ContentAlignment.MiddleCenter,
+            Cursor = Cursors.Hand,
+        };
+        _lblInvertYBadge.Click += (_, _) => { _invertY = !_invertY; UpdateInvertYBadge(); InvertYChanged?.Invoke(_invertY); };
+
+        // Row 2: AutoStart | Reset | ... | Exit (right-aligned)
+        _lblAutoStart = CreateBadge("Auto ON", Color.FromArgb(140, 140, 145), 0, 46);
         _lblAutoStart.Click += (_, _) => { _autoStart = !_autoStart; UpdateAutoStartBadge(); AutoStartChanged?.Invoke(_autoStart); };
 
-        _lblReset = CreateBadge("Reset", Color.FromArgb(200, 150, 80), 68, 36);
+        _lblReset = CreateBadge("Reset", Color.FromArgb(200, 150, 80), 72, 46);
         _lblReset.Click += (_, _) => ResetRequested?.Invoke();
 
         _btnExit = new Button
         {
             Text = "Exit",
-            Font = new Font("Segoe UI", 8f),
+            Font = new Font("Segoe UI", 8f, FontStyle.Bold),
             ForeColor = Color.FromArgb(200, 80, 80),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
-            AutoSize = true,
-            Location = new Point(195, 36),
+            Size = new Size(40, 20),
+            Location = new Point(FW - 40, 44),
             Cursor = Cursors.Hand,
         };
         _btnExit.FlatAppearance.BorderSize = 0;
