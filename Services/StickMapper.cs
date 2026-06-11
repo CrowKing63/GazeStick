@@ -4,6 +4,7 @@ namespace GazeStick.Services;
 
 public sealed class StickMapper
 {
+    private readonly object _lock = new();
     private double _prevX = 0.0;
     private double _prevY = 0.0;
     private bool _hasPrev = false;
@@ -21,13 +22,18 @@ public sealed class StickMapper
 
         if (distance < deadzone)
         {
-            _prevX = 0.0;
-            _prevY = 0.0;
-            _hasPrev = true;
+            lock (_lock)
+            {
+                _prevX = 0.0;
+                _prevY = 0.0;
+                _hasPrev = true;
+            }
             return StickOutput.Neutral;
         }
 
         double scale = (distance - deadzone) / (1.0 - deadzone);
+        scale = ApplyCurve(scale, settings.Curve, settings.CurvePower);
+
         double nx = (dx / distance) * scale;
         double ny = (dy / distance) * scale;
 
@@ -36,15 +42,19 @@ public sealed class StickMapper
         ny = Math.Clamp(ny * sensitivity, -1.0, 1.0);
 
         double smoothing = Math.Clamp(settings.Smoothing, 0.0, 0.9);
-        if (_hasPrev && smoothing > 0.0)
-        {
-            nx = _prevX * smoothing + nx * (1.0 - smoothing);
-            ny = _prevY * smoothing + ny * (1.0 - smoothing);
-        }
 
-        _prevX = nx;
-        _prevY = ny;
-        _hasPrev = true;
+        lock (_lock)
+        {
+            if (_hasPrev && smoothing > 0.0)
+            {
+                nx = _prevX * smoothing + nx * (1.0 - smoothing);
+                ny = _prevY * smoothing + ny * (1.0 - smoothing);
+            }
+
+            _prevX = nx;
+            _prevY = ny;
+            _hasPrev = true;
+        }
 
         if (settings.InvertY)
             ny = -ny;
@@ -55,10 +65,26 @@ public sealed class StickMapper
         return new StickOutput(stickX, stickY);
     }
 
+    private static double ApplyCurve(double value, CurveType curve, double power)
+    {
+        if (value <= 0.0) return 0.0;
+        if (value >= 1.0) return 1.0;
+
+        return curve switch
+        {
+            CurveType.Exponential => Math.Pow(value, Math.Max(power, 0.1)),
+            CurveType.Logarithmic => Math.Pow(value, 1.0 / Math.Max(power, 0.1)),
+            _ => value,
+        };
+    }
+
     public void Reset()
     {
-        _prevX = 0.0;
-        _prevY = 0.0;
-        _hasPrev = false;
+        lock (_lock)
+        {
+            _prevX = 0.0;
+            _prevY = 0.0;
+            _hasPrev = false;
+        }
     }
 }

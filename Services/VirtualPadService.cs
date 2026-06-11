@@ -24,102 +24,51 @@ public sealed class VirtualPadService : IVirtualPadService
 
     public bool Initialize(int preferredSlot = 0)
     {
-        int slot = preferredSlot;
-        if (slot == 0)
-            slot = FindAvailableSlot();
-
-        if (!TryCreateController(slot))
+        // Just create a controller and accept whatever slot ViGEm assigns
+        if (!TryCreateController())
         {
-            for (int i = 1; i <= 4; i++)
-            {
-                if (i == slot) continue;
-                if (TryCreateController(i))
-                {
-                    slot = i;
-                    break;
-                }
-            }
-        }
-
-        if (_controller == null)
-        {
-            ErrorOccurred?.Invoke("사용 가능한 가상 패드 슬롯이 없습니다.");
+            ErrorOccurred?.Invoke("사용 가능한 가상 패드 슬롯이 없습니다.\nViGEmBus 드라이버가 설치되어 있는지 확인하세요.");
             return false;
         }
 
-        _currentSlot = slot;
         SlotChanged?.Invoke(_currentSlot);
         return true;
     }
 
-    private bool TryCreateController(int slot)
+    private bool TryCreateController()
     {
         try
         {
+            var oldCtrl = _controller;
+
             var ctrl = _client.CreateXbox360Controller();
             ctrl.Connect();
 
-            var userIndex = ctrl.UserIndex;
-            if (userIndex < 0 || userIndex > 3)
-                userIndex = slot - 1;
+            _controller = ctrl;
+            _currentSlot = (int)ctrl.UserIndex + 1;
 
-            if (userIndex + 1 != slot)
+            // Clean up old controller after successful new connection
+            if (oldCtrl != null)
             {
-                ctrl.Disconnect();
-                ((IDisposable)ctrl).Dispose();
-                return false;
+                try { oldCtrl.Disconnect(); } catch { }
+                if (oldCtrl is IDisposable d) d.Dispose();
             }
 
-            _controller?.Disconnect();
-            if (_controller is IDisposable oldCtrl)
-                oldCtrl.Dispose();
-
-            _controller = ctrl;
             return true;
         }
-        catch
+        catch (Exception ex)
         {
+            ErrorOccurred?.Invoke($"가상 패드 생성 실패: {ex.Message}");
             return false;
         }
     }
 
-    private int FindAvailableSlot()
-    {
-        for (int i = 1; i <= 4; i++)
-        {
-            try
-            {
-                var ctrl = _client.CreateXbox360Controller();
-                ctrl.Connect();
-                _currentSlot = (int)ctrl.UserIndex + 1;
-                _controller = ctrl;
-                return _currentSlot;
-            }
-            catch { }
-        }
-        return 1;
-    }
-
     public void SetSlot(int slot)
     {
-        if (slot < 1 || slot > 4) return;
-        if (slot == _currentSlot) return;
-
-        if (TryCreateController(slot))
-        {
-            _currentSlot = slot;
+        // ViGEm assigns slots automatically; we can't force a specific one.
+        // Just create a fresh controller.
+        if (TryCreateController())
             SlotChanged?.Invoke(_currentSlot);
-        }
-        else
-        {
-            int fallback = FindAvailableSlot();
-            if (fallback != _currentSlot)
-            {
-                _currentSlot = fallback;
-                SlotChanged?.Invoke(_currentSlot);
-                ErrorOccurred?.Invoke($"슬롯 {slot} 사용 중. 슬롯 {fallback}으로 변경됨.");
-            }
-        }
     }
 
     public void Update(StickOutput output)

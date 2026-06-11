@@ -16,38 +16,48 @@ public static class SettingsManager
         PropertyNameCaseInsensitive = true
     };
 
+    private static readonly object _lock = new();
+
     public static AppSettings Load()
     {
-        try
+        lock (_lock)
         {
-            if (File.Exists(SettingsPath))
+            try
             {
-                var json = File.ReadAllText(SettingsPath);
-                var settings = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions);
-                if (settings != null) return settings;
+                if (File.Exists(SettingsPath))
+                {
+                    var json = File.ReadAllText(SettingsPath);
+                    var settings = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions);
+                    if (settings != null) return settings;
+                }
             }
-        }
-        catch
-        {
-            // Ignore and return defaults
+            catch
+            {
+                // Ignore and return defaults
+            }
         }
         return new AppSettings();
     }
 
     public static void Save(AppSettings settings)
     {
-        try
+        lock (_lock)
         {
-            var dir = Path.GetDirectoryName(SettingsPath);
-            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
-                Directory.CreateDirectory(dir);
+            try
+            {
+                var dir = Path.GetDirectoryName(SettingsPath);
+                if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
 
-            var json = JsonSerializer.Serialize(settings, JsonOptions);
-            File.WriteAllText(SettingsPath, json);
-        }
-        catch
-        {
-            // Ignore write failures
+                var json = JsonSerializer.Serialize(settings, JsonOptions);
+                var tempPath = SettingsPath + ".tmp";
+                File.WriteAllText(tempPath, json);
+                File.Move(tempPath, SettingsPath, overwrite: true);
+            }
+            catch
+            {
+                // Ignore write failures
+            }
         }
     }
 }

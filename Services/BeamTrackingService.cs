@@ -1,14 +1,13 @@
-using System.Reflection;
+using Eyeware.BeamEyeTracker;
 using GazeStick.Models;
 
 namespace GazeStick.Services;
 
 public sealed class BeamTrackingService : ITrackingService
 {
-    private const string BeamSdkDllName = "EyetrackerGazeApi.dll";
-    private Assembly? _beamAssembly;
-    private object? _tracker;
+    private API? _api;
     private System.Threading.Timer? _pollTimer;
+    private double _lastTimestamp = Constants.NullDataTimestamp;
     private bool _disposed;
     private bool _isConnected;
 
@@ -20,64 +19,32 @@ public sealed class BeamTrackingService : ITrackingService
 
     public BeamTrackingService()
     {
-        LoadBeamSdk();
-    }
-
-    private void LoadBeamSdk()
-    {
-        try
-        {
-            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            string dllPath = Path.Combine(baseDir, "beam-sdk", BeamSdkDllName);
-            
-            if (!File.Exists(dllPath))
-            {
-                dllPath = Path.Combine(baseDir, BeamSdkDllName);
-            }
-
-            if (!File.Exists(dllPath))
-            {
-                ErrorOccurred?.Invoke($"Beam SDK DLL을 찾을 수 없습니다: {BeamSdkDllName}. beam-sdk 폴더에 파일을 배치하세요.");
-                return;
-            }
-
-            _beamAssembly = Assembly.LoadFrom(dllPath);
-        }
-        catch (Exception ex)
-        {
-            ErrorOccurred?.Invoke($"Beam SDK 로드 실패: {ex.Message}");
-        }
     }
 
     public void Start()
     {
-        if (_beamAssembly == null || _disposed) return;
+        if (_disposed) return;
+
+        // Clean up existing resources before re-initializing
+        Stop();
 
         try
         {
-            var trackerType = _beamAssembly.GetType("EyetrackerGazeApi.Tracker");
-            if (trackerType == null)
-            {
-                ErrorOccurred?.Invoke("Beam SDK에서 Tracker 타입을 찾을 수 없습니다.");
-                return;
-            }
+            var viewportGeom = new ViewportGeometry(
+                new Eyeware.BeamEyeTracker.Point(0, 0),
+                new Eyeware.BeamEyeTracker.Point(GetSystemMetrics(0), GetSystemMetrics(1))
+            );
 
-            _tracker = Activator.CreateInstance(trackerType);
-            if (_tracker == null)
-            {
-                ErrorOccurred?.Invoke("Tracker 인스턴스 생성 실패.");
-                return;
-            }
+            _api = new API("GazeStick", viewportGeom);
 
-            var connectMethod = trackerType.GetMethod("Connect");
-            connectMethod?.Invoke(_tracker, null);
+            var status = _api.GetTrackingDataReceptionStatus();
+            SetConnected(status == TrackingDataReceptionStatus.ReceivingTrackingData);
 
-            _pollTimer = new System.Threading.Timer(PollGaze, null, 0, 16); // ~60fps
-            SetConnected(true);
+            _pollTimer = new System.Threading.Timer(PollGaze, null, 0, 16);
         }
         catch (Exception ex)
         {
-            ErrorOccurred?.Invoke($"Beam 연결 실패: {ex.Message}");
+            ErrorOccurred?.Invoke($"Beam API 초기화 실패: {ex.Message}. Beam Eye Tracker 앱이 실행 중인지 확인하세요.");
             SetConnected(false);
         }
     }
@@ -87,51 +54,50 @@ public sealed class BeamTrackingService : ITrackingService
         _pollTimer?.Dispose();
         _pollTimer = null;
 
-        if (_tracker != null)
-        {
-            try
-            {
-                var disconnectMethod = _tracker.GetType().GetMethod("Disconnect");
-                disconnectMethod?.Invoke(_tracker, null);
-            }
-            catch { }
-            _tracker = null;
-        }
+        _api?.Dispose();
+        _api = null;
 
         SetConnected(false);
     }
 
     private void PollGaze(object? state)
     {
-        if (_tracker == null || _disposed) return;
+        if (_api == null || _disposed) return;
 
         try
         {
-            var getGazeMethod = _tracker.GetType().GetMethod("GetGaze");
-            if (getGazeMethod == null) return;
+            var status = _api.GetTrackingDataReceptionStatus();
+            SetConnected(status == TrackingDataReceptionStatus.ReceivingTrackingData);
 
-            var gazeResult = getGazeMethod.Invoke(_tracker, null);
-            if (gazeResult == null) return;
+            if (status != TrackingDataReceptionStatus.ReceivingTrackingData)
+                return;
 
-            var xProp = gazeResult.GetType().GetProperty("X");
-            var yProp = gazeResult.GetType().GetProperty("Y");
-            var isValidProp = gazeResult.GetType().GetProperty("IsValid");
+            bool hasNewData = _api.WaitForNewTrackingData(ref _lastTimestamp, 1);
+            if (!hasNewData) return;
 
-            if (xProp == null || yProp == null) return;
+            using var stateSet = _api.GetLatestTrackingStateSet();
+            var userState = stateSet.UserState;
 
-            double x = Convert.ToDouble(xProp.GetValue(gazeResult));
-            double y = Convert.ToDouble(yProp.GetValue(gazeResult));
+            if (userState.TimestampInSeconds == Constants.NullDataTimestamp)
+                return;
 
-            bool isValid = isValidProp != null && Convert.ToBoolean(isValidProp.GetValue(gazeResult));
+            var gaze = userState.ViewportGaze;
+            if (gaze.Confidence == TrackingConfidence.LostTracking)
+                return;
 
-            if (isValid && x >= 0.0 && x <= 1.0 && y >= 0.0 && y <= 1.0)
+            float x = gaze.NormalizedPointOfRegard.X;
+            float y = gaze.NormalizedPointOfRegard.Y;
+
+            if (x >= 0.0f && x <= 1.0f && y >= 0.0f && y <= 1.0f)
             {
                 GazeReceived?.Invoke(new GazePoint(x, y));
             }
         }
-        catch
+        catch (ObjectDisposedException) { }
+        catch (Exception ex)
         {
-            // Ignore transient errors
+            ErrorOccurred?.Invoke($"시선 데이터 폴링 오류: {ex.Message}");
+            SetConnected(false);
         }
     }
 
@@ -143,6 +109,9 @@ public sealed class BeamTrackingService : ITrackingService
             ConnectionChanged?.Invoke(connected);
         }
     }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern int GetSystemMetrics(int nIndex);
 
     public void Dispose()
     {

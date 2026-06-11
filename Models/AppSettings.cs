@@ -9,7 +9,9 @@ public sealed class AppSettings
     public double Smoothing { get; set; } = 0.30;
     public bool InvertY { get; set; } = false;
     public string ToggleHotkey { get; set; } = "F9";
-    public int PadSlot { get; set; } = 0; // 0 = auto
+    public int PadSlot { get; set; } = 0;
     public bool StartWithWindows { get; set; } = true;
     public bool StartActive { get; set; } = true;
+    public CurveType Curve { get; set; } = CurveType.Linear;
+    public double CurvePower { get; set; } = 2.0;
 }
