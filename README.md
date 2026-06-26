@@ -80,6 +80,12 @@ Settings are saved to `%AppData%\GazeStick\settings.json`.
 - **Virtual controller:** [ViGEmBus](https://github.com/nefarius/ViGEmBus) via [Nefarius.ViGEm.Client](https://www.nuget.org/packages/Nefarius.ViGEm.Client)
 - **UI:** System tray with popup settings panel (no main window)
 
+## Designed for Combination
+
+GazeStick provides only the right stick output. On its own this is limited, but as an accessibility tool it is designed to be paired with other input devices and controller remapping software.
+
+Applications like [reWASD](https://www.rewasd.com/) can merge multiple virtual and physical controllers into one unified controller, allowing you to combine GazeStick's right stick output with a physical controller's left stick, keyboard, mouse, or other inputs. This is the standard pattern: each tool handles one aspect of input, and a remapping layer ties them together.
+
 ## Third-Party Licenses
 
 This application uses the Beam Eye Tracker SDK, which includes third-party components with the following licenses:
