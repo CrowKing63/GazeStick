@@ -26,13 +26,13 @@ public sealed class VirtualPadService : IVirtualPadService
         }
         catch (Exception ex)
         {
-            ErrorOccurred?.Invoke($"ViGEmBus 초기화 실패: {ex.Message}\n드라이버가 설치되어 있는지 확인하세요.");
+            ErrorOccurred?.Invoke($"ViGEmBus initialization failed: {ex.Message}\nMake sure the driver is installed.");
             return false;
         }
 
         if (!TryCreateController())
         {
-            ErrorOccurred?.Invoke("사용 가능한 가상 패드 슬롯이 없습니다.\nViGEmBus 드라이버가 설치되어 있는지 확인하세요.");
+            ErrorOccurred?.Invoke("No available virtual pad slots.\nMake sure the ViGEmBus driver is installed.");
             return false;
         }
 
@@ -78,7 +78,7 @@ public sealed class VirtualPadService : IVirtualPadService
         }
         catch (Exception ex)
         {
-            ErrorOccurred?.Invoke($"가상 패드 생성 실패: {ex.Message}");
+            ErrorOccurred?.Invoke($"Virtual pad creation failed: {ex.Message}");
             return false;
         }
     }

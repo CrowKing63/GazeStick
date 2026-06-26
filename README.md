@@ -46,7 +46,7 @@ Output: `bin/Release/net8.0-windows/win-x64/GazeStick.exe`
 | Adjust deadzone/sensitivity/smoothing | Drag value or press +/- in the popup panel |
 | Toggle Y-invert | Click the Y badge in the popup panel |
 | Change toggle hotkey | Click the hotkey badge, then press new key |
-| Quit | Click "종료" in the popup panel |
+| Quit | Click "Exit" in the popup panel |
 
 ## Configuration
 
@@ -79,6 +79,28 @@ Settings are saved to `%AppData%\GazeStick\settings.json`.
 - **Eye tracking:** [Beam Eye Tracker SDK](https://docs.beam.eyeware.tech/) (native DLL, P/Invoke)
 - **Virtual controller:** [ViGEmBus](https://github.com/nefarius/ViGEmBus) via [Nefarius.ViGEm.Client](https://www.nuget.org/packages/Nefarius.ViGEm.Client)
 - **UI:** System tray with popup settings panel (no main window)
+
+## Third-Party Licenses
+
+This application uses the Beam Eye Tracker SDK, which includes third-party components with the following licenses:
+
+- [ZeroMQ (libzmq)](https://github.com/zeromq/libzmq) — Mozilla Public License 2.0
+- [libsodium](https://github.com/jedisct1/libsodium) — ISC License
+- [Protocol Buffers](https://github.com/protocolbuffers/protobuf) — BSD 3-Clause License
+- [Eigen](https://gitlab.com/libeigen/eigen) — Mozilla Public License 2.0
+- [cppzmq](https://github.com/zeromq/cppzmq) — MIT License
+- [utfcpp](https://github.com/nemtrif/utfcpp) — Boost Software License 1.0
+- [pybind11](https://github.com/pybind/pybind11) — BSD 3-Clause License
+
+See [`beam-sdk/THIRD_PARTY_LICENSES.md`](beam-sdk/THIRD_PARTY_LICENSES.md) for the full license texts.
+
+## Disclaimers
+
+**Non-Medical Device:** This software and the underlying Beam Eye Tracker SDK are not medical devices. They are not intended, nor should they be used, to replace professional medical advice, diagnosis, or treatment.
+
+**High-Risk Use Prohibition:** This software must not be used in high-risk environments or safety-critical applications where any software malfunction or interruption could lead to personal injury, loss of life, or physical/environmental damage.
+
+**Data Privacy:** Eye-tracking / gaze data is processed entirely locally on your machine and is used only for controller mapping. No gaze data is logged, recorded, or transmitted to any remote server without your explicit consent.
 
 ## License
 

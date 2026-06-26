@@ -44,7 +44,7 @@ public sealed class BeamTrackingService : ITrackingService
         }
         catch (Exception ex)
         {
-            ErrorOccurred?.Invoke($"Beam API 초기화 실패: {ex.Message}. Beam Eye Tracker 앱이 실행 중인지 확인하세요.");
+            ErrorOccurred?.Invoke($"Beam API initialization failed: {ex.Message}. Make sure the Beam Eye Tracker app is running.");
             SetConnected(false);
         }
     }
@@ -97,7 +97,7 @@ public sealed class BeamTrackingService : ITrackingService
         catch (ObjectDisposedException) { }
         catch (Exception ex)
         {
-            ErrorOccurred?.Invoke($"시선 데이터 폴링 오류: {ex.Message}");
+            ErrorOccurred?.Invoke($"Gaze data polling error: {ex.Message}");
             SetConnected(false);
         }
     }

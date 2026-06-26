@@ -72,9 +72,9 @@ public sealed class TrayApplicationContext : ApplicationContext
         {
             _trayIcon.Text = "GazeStick — ViGEm Error";
             var result = MessageBox.Show(
-                "ViGEmBus 드라이버가 설치되지 않았거나 연결할 수 없습니다.\n\n" +
-                "게임패드 가상화에 필요합니다. 설치하시겠습니까?",
-                "GazeStick - ViGEmBus 필요",
+                "ViGEmBus driver is not installed or could not be reached.\n\n" +
+                "It is required for gamepad virtualization. Would you like to install it?",
+                "GazeStick - ViGEmBus Required",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Error);
             if (result == DialogResult.Yes)
@@ -249,8 +249,8 @@ public sealed class TrayApplicationContext : ApplicationContext
     private void ResetSettings()
     {
         var result = MessageBox.Show(
-            "모든 설정을 기본값으로 되돌리겠습니까?",
-            "GazeStick — 설정 초기화",
+            "Reset all settings to defaults?",
+            "GazeStick — Reset Settings",
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Question);
         if (result != DialogResult.Yes) return;

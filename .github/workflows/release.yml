@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Publish (framework-dependent)
+        run: dotnet publish -c Release -r win-x64 --self-contained false -o publish
+
+      - name: Download Beam SDK DLL
+        shell: pwsh
+        run: |
+          $url = "${{ secrets.BEAM_SDK_DLL_URL }}"
+          if ($url -ne "") {
+            $out = "publish/beam_eye_tracker_client.dll"
+            Write-Host "Downloading beam_eye_tracker_client.dll ..."
+            Invoke-WebRequest -Uri $url -OutFile $out
+            if (Test-Path $out) {
+              Write-Host "DLL downloaded successfully ($((Get-Item $out).Length) bytes)"
+            }
+          } else {
+            Write-Warning "BEAM_SDK_DLL_URL secret not set. The release zip will NOT include beam_eye_tracker_client.dll."
+            Write-Warning "To fix this, add the secret in GitHub repo Settings > Secrets and variables > Actions."
+            Write-Warning "The URL should point to a direct download of the DLL from the Beam SDK package."
+          }
+
+      - name: Create release archive
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          $zipName = "GazeStick-$version-win-x64.zip"
+          Compress-Archive -Path publish\* -DestinationPath $zipName
+          Write-Host "Created $zipName"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: GazeStick-*.zip
+          fail_on_unmatched_files: false
+          body: |
+            ## GazeStick ${{ github.ref_name }}
+
+            ### Prerequisites
+            - [ViGEmBus driver](https://github.com/nefarius/ViGEmBus/releases/latest) (install and restart)
+            - [Beam Eye Tracker app](https://beam.eyeware.tech/) (running, signed in, with Gaming Extensions activated)
+            - .NET 8 Desktop Runtime ([download](https://dotnet.microsoft.com/en-us/download/dotnet/8.0))
+
+            ### Installation
+            1. Install prerequisites listed above.
+            2. Extract the zip archive to any folder.
+            3. Run `GazeStick.exe`.
+
+            ### Disclaimers
+            - **Non-Medical Device:** This software and the underlying Beam Eye Tracker SDK are not medical devices. They are not intended, nor should they be used, to replace professional medical advice, diagnosis, or treatment.
+            - **High-Risk Use Prohibition:** This software must not be used in high-risk environments or safety-critical applications where any software malfunction or interruption could lead to personal injury, loss of life, or physical/environmental damage.
+            - **Data Privacy:** Eye-tracking / gaze data is processed entirely locally on your machine and is used only for controller mapping. No gaze data is logged, recorded, or transmitted to any remote server without your explicit consent.

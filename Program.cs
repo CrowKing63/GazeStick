@@ -16,7 +16,7 @@ internal static class Program
     [STAThread]
     private static void Main()
     {
-        Trace("시작");
+        Trace("Start");
         try
         {
             var consoleWnd = GetConsoleWindow();
@@ -30,16 +30,16 @@ internal static class Program
 
             if (!createdNew)
             {
-                Trace("이미 실행 중");
-                MessageBox.Show("GazeStick가 이미 실행 중입니다.", "GazeStick",
+                Trace("Already running");
+                MessageBox.Show("GazeStick is already running.", "GazeStick",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
             ApplicationConfiguration.Initialize();
-            Trace("Application.Run 시작");
+            Trace("Application.Run started");
             Application.Run(new TrayApplicationContext());
-            Trace("종료");
+            Trace("Exit");
         }
         catch (Exception ex)
         {

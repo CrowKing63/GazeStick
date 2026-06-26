@@ -93,7 +93,51 @@
 
 ## 배포 방침
 
-- GitHub 공개 레포 (MIT 또는 Apache 2.0)
-- Beam SDK 바이너리는 레포에 포함하지 않음
-- README에 "Beam Eye Tracker 앱 설치 필요" 명시
+- 개발자는 한국인이고 한국어 사용자이지만 GitHub에 공개할 모든 소스코드 주석 readme 문서 등은 영어로 작성 
+- GitHub 공개 레포 (MIT)
 - ViGEmBus 드라이버 설치 안내 포함
+
+## 2. Licensing & Redistribution Constraints (CRITICAL)
+When writing setup scripts, GitHub action workflows, README templates, or application "About" dialogs, the agent **MUST** adhere to the following Beam Eye Tracker SDK licensing terms:
+
+### A. DLL Redistribution Allowed
+- The dynamic library `beam_eye_tracker_client.dll` **can and should** be packaged and distributed alongside the application binaries (e.g., in GitHub Releases or installer outputs). 
+- Do not exclude this DLL from the release pipeline.
+
+### B. Prerequisites to Mention in README / UI
+- The application requires the end-user to have the **official Beam Eye Tracker application installed and activated (with a valid subscription/license)** on their PC. The SDK library functions as a client that communicates with the local Beam server.
+
+### C. Mandatory Disclaimers (Must be embedded in README.md & App "About" Section)
+Whenever the agent updates or generates the project's documentation, user manuals, or GitHub templates, it **must explicitly include** the following safety and legal disclaimers:
+1. **Non-Medical Device Disclaimer:** "This software and the underlying Beam Eye Tracker SDK are not medical devices. They are not intended, nor should they be used, to replace professional medical advice, diagnosis, or treatment."
+2. **High-Risk Use Prohibition:** "This software must not be used in high-risk environments or safety-critical applications where any software malfunction or interruption could lead to personal injury, loss of life, or physical/environmental damage."
+3. **Data & Gaze Notice:** Clearly state to the user how eye-tracking/gaze data is handled (processed locally for controller mapping, no unauthorized remote logging).
+
+## 3. Implementation Directives for the Agent
+- Always verify that building or packaging scripts copy `beam_eye_tracker_client.dll` to the executable output directory.
+- Ensure any user interface design retains a clean, accessible layout, staying highly performance-optimized and lightweight.
+- If asked to generate a deployment template or README, automatically incorporate the license prerequisites and medical disclaimers specified above without requiring further reminders.
+
+## 4. GitHub Actions Release Workflow
+
+The release workflow is at `.github/workflows/release.yml`. It is triggered by pushing a tag matching `v*`.
+
+### Required GitHub Secret
+
+The workflow needs `BEAM_SDK_DLL_URL` secret set in the GitHub repository. This URL should point to a direct download of `beam_eye_tracker_client.dll` from the Beam SDK package (typically from Eyeware's CDN after accepting the license on docs.beam.eyeware.tech).
+
+To obtain the URL:
+1. Download the Beam SDK zip from https://docs.beam.eyeware.tech/
+2. Extract `beam-sdk/bin/win64/beam_eye_tracker_client.dll` locally
+3. Upload it to a private location (e.g., a private GitHub Release, or a cloud storage with a direct link)
+4. Set the direct download URL as `BEAM_SDK_DLL_URL` in GitHub repo Settings > Secrets and variables > Actions
+
+### Creating a Release
+
+```powershell
+# Tag and push
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+The workflow will build, package, and create a GitHub Release with the zip automatically.
