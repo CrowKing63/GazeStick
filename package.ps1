@@ -5,14 +5,19 @@ param(
 $ErrorActionPreference = "Stop"
 $RepoRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $PublishDir = Join-Path $RepoRoot "publish"
-$OutputDir = Join-Path $RepoRoot "bin\Release\net8.0-windows\win-x64"
 $DllSource = Join-Path $RepoRoot "beam-sdk\bin\win64\beam_eye_tracker_client.dll"
 $ZipName = "GazeStick-$Version-win-x64.zip"
 
 Write-Host "=== Building GazeStick v$Version ===" -ForegroundColor Cyan
 
+# Kill any running instance that could lock build output
+Get-Process GazeStick -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+
 # Build
 dotnet publish -c Release -r win-x64 --self-contained false -o $PublishDir
+if ($LASTEXITCODE -ne 0) {
+    throw "dotnet publish failed with exit code $LASTEXITCODE"
+}
 
 # Copy SDK DLL
 if (Test-Path $DllSource) {
