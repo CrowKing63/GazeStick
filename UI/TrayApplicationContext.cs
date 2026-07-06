@@ -136,11 +136,15 @@ public sealed class TrayApplicationContext : ApplicationContext
 
     private void OnError(string message)
     {
-        var text = $"GazeStick — {message}";
-        if (text.Length > 128)
-            text = text[..125] + "...";
-        _trayIcon.Text = text;
-        _trayIcon.ShowBalloonTip(3000, "GazeStick", message, ToolTipIcon.Warning);
+        try
+        {
+            var text = $"GazeStick — {message}";
+            if (text.Length >= 128)
+                text = text[..124] + "...";
+            _trayIcon.Text = text;
+            _trayIcon.ShowBalloonTip(3000, "GazeStick", message, ToolTipIcon.Warning);
+        }
+        catch { }
     }
 
     private void OnSlotChanged(int slot)
