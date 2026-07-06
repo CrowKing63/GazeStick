@@ -5,3 +5,7 @@ beam-sdk/
 *.user
 *.suo
 GazeStick-*.zip
+publish/
+publish_test/
+stdout.txt
+stderr.txt
