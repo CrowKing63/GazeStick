@@ -9,8 +9,8 @@
     <ApplicationIcon>Resources\icon.ico</ApplicationIcon>
     <Platforms>x64</Platforms>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <Version>1.0.0</Version>
-    <FileVersion>1.0.0</FileVersion>
+    <Version>1.0.1</Version>
+    <FileVersion>1.0.1</FileVersion>
     <Description>Webcam eye tracking to virtual gamepad right stick converter</Description>
     <Company>GazeStick</Company>
     <Product>GazeStick</Product>
