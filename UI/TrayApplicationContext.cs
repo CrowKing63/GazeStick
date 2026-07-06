@@ -263,7 +263,7 @@ public sealed class TrayApplicationContext : ApplicationContext
         _settings.Curve = CurveType.Linear;
         _settings.CurvePower = 2.0;
         _settings.StartActive = true;
-        _settings.StartWithWindows = true;
+        _settings.StartWithWindows = false;
         SettingsManager.Save(_settings);
 
         _hotkey?.Unregister();
@@ -275,7 +275,7 @@ public sealed class TrayApplicationContext : ApplicationContext
     private void StartReconnectTimer()
     {
         if (_reconnectTimer == null) return;
-        int interval = Math.Min(2000 * (1 << _reconnectAttempts), 30000);
+        int interval = Math.Clamp(2000 * (1 << Math.Min(_reconnectAttempts, 14)), 1, 30000);
         _reconnectTimer.Interval = interval;
         _reconnectTimer.Start();
     }
