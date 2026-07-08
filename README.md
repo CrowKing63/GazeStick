@@ -108,6 +108,16 @@ See [`beam-sdk/THIRD_PARTY_LICENSES.md`](beam-sdk/THIRD_PARTY_LICENSES.md) for t
 
 **Data Privacy:** Eye-tracking / gaze data is processed entirely locally on your machine and is used only for controller mapping. No gaze data is logged, recorded, or transmitted to any remote server without your explicit consent.
 
+## Demo
+
+See GazeStick in action playing an open-world third-person game:
+
+[![GazeStick Demo](https://img.youtube.com/vi/ZjwA1SRjoVQ/0.jpg)](https://youtu.be/ZjwA1SRjoVQ)
+
+*[Watch on YouTube](https://youtu.be/ZjwA1SRjoVQ) — Playing open-world games using Beam Eye Tracker and GazeStick*
+
+---
+
 ## License
 
 MIT
