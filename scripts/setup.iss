@@ -56,6 +56,11 @@ Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: po
 [Code]
 const
   ViGEmRegKey = 'SYSTEM\CurrentControlSet\Services\vigem';
+  ViGEmUrl = 'https://github.com/nefarius/ViGEmBus/releases/latest/download/ViGEmBusSetup_x64.msi';
+  DotNet8Url = 'https://aka.ms/dotnet/8.0/desktop/runtime/windows-x64.exe';
+
+function URLDownloadToFile(pCaller: LongPtr; szURL: string; szFileName: string; dwReserved: LongPtr; lpfnCB: LongPtr): Integer;
+external 'URLDownloadToFile@urlmon.dll stdcall';
 
 function IsViGEmInstalled: Boolean;
 var
@@ -64,16 +69,114 @@ begin
   Result := RegQueryStringValue(HKLM, ViGEmRegKey, 'DisplayName', Value);
 end;
 
+function IsDotNet8DesktopInstalled: Boolean;
+var
+  Names: TArrayOfString;
+  i: Integer;
+begin
+  Result := False;
+  if RegGetSubkeyNames(HKLM64, 'SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App', Names) then
+  begin
+    for i := 0 to GetArrayLength(Names) - 1 do
+    begin
+      if Copy(Names[i], 1, 3) = '8.0' then
+      begin
+        Result := True;
+        Exit;
+      end;
+    end;
+  end;
+end;
+
+function DownloadFile(Url, DestPath: string): Boolean;
+begin
+  Result := URLDownloadToFile(0, Url, DestPath, 0, 0) = 0;
+end;
+
+function InstallViGEmBus: Boolean;
+var
+  DestPath: string;
+  ResultCode: Integer;
+begin
+  DestPath := ExpandConstant('{tmp}\ViGEmBusSetup_x64.msi');
+
+  if not FileExists(DestPath) then
+  begin
+    if not DownloadFile(ViGEmUrl, DestPath) then
+    begin
+      MsgBox('Failed to download ViGEmBus driver. Please install it manually from:' + #13#10 +
+        'https://github.com/nefarius/ViGEmBus/releases/latest',
+        mbError, MB_OK);
+      Result := False;
+      Exit;
+    end;
+  end;
+
+  if not Exec('msiexec.exe', '/i "' + DestPath + '" /quiet /norestart', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then
+  begin
+    MsgBox('ViGEmBus installation failed (error code: ' + IntToStr(ResultCode) + ').' + #13#10 +
+      'Please install it manually and run this installer again.',
+      mbError, MB_OK);
+    Result := False;
+    Exit;
+  end;
+
+  Result := True;
+end;
+
+function InstallDotNet8: Boolean;
+var
+  DestPath: string;
+  ResultCode: Integer;
+begin
+  DestPath := ExpandConstant('{tmp}\windowsdesktop-runtime-8.0-win-x64.exe');
+
+  if not FileExists(DestPath) then
+  begin
+    if not DownloadFile(DotNet8Url, DestPath) then
+    begin
+      MsgBox('Failed to download .NET 8 Desktop Runtime. Please install it manually from:' + #13#10 +
+        'https://dotnet.microsoft.com/en-us/download/dotnet/8.0',
+        mbError, MB_OK);
+      Result := False;
+      Exit;
+    end;
+  end;
+
+  if not Exec(DestPath, '/install /quiet /norestart', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then
+  begin
+    MsgBox('.NET 8 Desktop Runtime installation failed (error code: ' + IntToStr(ResultCode) + ').' + #13#10 +
+      'Please install it manually and run this installer again.',
+      mbError, MB_OK);
+    Result := False;
+    Exit;
+  end;
+
+  Result := True;
+end;
+
 function InitializeSetup: Boolean;
 begin
   Result := True;
+
   if not IsViGEmInstalled then
   begin
-    MsgBox(
-      'ViGEmBus driver was not detected on this system.' + #13#10 + #13#10 +
-      'GazeStick requires ViGEmBus to create a virtual Xbox 360 controller.' + #13#10 +
-      'Please install it from: https://github.com/nefarius/ViGEmBus/releases/latest' + #13#10 +
-      '(You can also continue with the installation, but GazeStick will not work without ViGEmBus.)',
-      mbInformation, MB_OK);
+    if not InstallViGEmBus then
+    begin
+      Result := False;
+      Exit;
+    end;
   end;
+
+  // .NET 8 Desktop Runtime is bundled with the self-contained installer.
+  // No separate .NET installation is needed.
+  // If switching to a framework-dependent build in the future,
+  // uncomment below to auto-install .NET 8:
+  //
+  // if not IsDotNet8DesktopInstalled then
+  //   if not InstallDotNet8 then
+  //   begin
+  //     Result := False;
+  //     Exit;
+  //   end;
 end;
