@@ -135,11 +135,18 @@ body {
   background: var(--surface);
 }
 
+.hero-video-row {
+  display: flex;
+  gap: 16px;
+  margin-top: 40px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 .hero-video-card {
   display: inline-flex;
   align-items: center;
   gap: 12px;
-  margin-top: 40px;
   padding: 8px 16px 8px 8px;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -744,11 +751,18 @@ body {
     </a>
   </div>
 
-  <a href="#demo" class="hero-video-card">
-    <img src="https://img.youtube.com/vi/ZjwA1SRjoVQ/hqdefault.jpg" alt="Demo video thumbnail" loading="lazy" />
-    <span class="play-icon">&#9654;</span>
-    <span class="hero-video-label">Watch Demo</span>
-  </a>
+  <div class="hero-video-row">
+    <a href="#demo" class="hero-video-card">
+      <img src="https://img.youtube.com/vi/ZjwA1SRjoVQ/hqdefault.jpg" alt="Spider-Man demo" loading="lazy" />
+      <span class="play-icon">&#9654;</span>
+      <span class="hero-video-label">Spider-Man</span>
+    </a>
+    <a href="#demo" class="hero-video-card">
+      <img src="https://img.youtube.com/vi/5eiwslQ4hgk/hqdefault.jpg" alt="Sekiro demo" loading="lazy" />
+      <span class="play-icon">&#9654;</span>
+      <span class="hero-video-label">Sekiro</span>
+    </a>
+  </div>
 </section>
 
 <!-- Demo Video -->
