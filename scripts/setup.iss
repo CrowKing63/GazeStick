@@ -65,6 +65,8 @@ begin
 end;
 
 function InitializeSetup: Boolean;
+var
+  ErrorCode: Integer;
 begin
   Result := True;
   if not IsViGEmInstalled then
@@ -75,7 +77,7 @@ begin
       'Would you like to download and install it now?',
       mbConfirmation, MB_YESNO) = IDYES then
     begin
-      ShellExec('open', 'https://github.com/nefarius/ViGEmBus/releases/latest', '', '', SW_SHOWNORMAL, ewNoWait);
+      ShellExec('open', 'https://github.com/nefarius/ViGEmBus/releases/latest', '', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
     end;
   end;
 end;
