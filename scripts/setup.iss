@@ -59,8 +59,8 @@ const
   ViGEmUrl = 'https://github.com/nefarius/ViGEmBus/releases/latest/download/ViGEmBusSetup_x64.msi';
   DotNet8Url = 'https://aka.ms/dotnet/8.0/desktop/runtime/windows-x64.exe';
 
-function URLDownloadToFile(pCaller: LongWord; szURL: string; szFileName: string; dwReserved: LongWord; lpfnCB: LongWord): Integer;
-external 'URLDownloadToFile@urlmon.dll stdcall';
+function URLDownloadToFileW(pCaller: Integer; szURL: string; szFileName: string; dwReserved: Integer; lpfnCB: Integer): Integer;
+external 'URLDownloadToFileW@urlmon.dll stdcall';
 
 function IsViGEmInstalled: Boolean;
 var
@@ -90,7 +90,7 @@ end;
 
 function DownloadFile(Url, DestPath: string): Boolean;
 begin
-  Result := URLDownloadToFile(0, Url, DestPath, 0, 0) = 0;
+  Result := URLDownloadToFileW(0, Url, DestPath, 0, 0) = 0;
 end;
 
 function InstallViGEmBus: Boolean;
