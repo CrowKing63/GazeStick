@@ -21,6 +21,8 @@ public sealed class TrayApplicationContext : ApplicationContext
     private PopupPanel? _popup;
     private bool _isActive;
     private bool _disposed;
+    private Icon? _inactiveIcon;
+    private bool _inactiveIconCreated;
     private System.Windows.Forms.Timer? _reconnectTimer;
     private int _reconnectAttempts;
 
@@ -52,6 +54,14 @@ public sealed class TrayApplicationContext : ApplicationContext
         _hotkeyWindow.HotkeyPressed += ToggleActive;
 
         InitializeServices();
+
+        if (_settings.ShowOnboarding)
+        {
+            using var onboarding = new OnboardingForm();
+            onboarding.ShowDialog();
+            _settings.ShowOnboarding = !onboarding.DontShowAgain;
+            SettingsManager.Save(_settings);
+        }
     }
 
     private static Icon LoadAppIcon()
@@ -95,6 +105,7 @@ public sealed class TrayApplicationContext : ApplicationContext
         _tracker.Start();
 
         _isActive = _settings.StartActive;
+        _trayIcon.Icon = _isActive ? _appIcon : GetInactiveIcon();
         UpdateTrayText();
 
         _hotkey = new HotkeyManager(_hotkeyWindow.Handle);
@@ -107,6 +118,26 @@ public sealed class TrayApplicationContext : ApplicationContext
 
         if (!_tracker.IsConnected)
             StartReconnectTimer();
+
+        CheckForUpdateAsync();
+    }
+
+    private async void CheckForUpdateAsync()
+    {
+        try
+        {
+            var latest = await UpdateChecker.CheckForUpdateAsync();
+            if (UpdateChecker.IsNewerAvailable(latest))
+            {
+                _trayIcon.BalloonTipClicked += (_, _) =>
+                    Process.Start(new ProcessStartInfo("https://github.com/CrowKing63/GazeStick/releases/latest")
+                        { UseShellExecute = true });
+                _trayIcon.ShowBalloonTip(5000, "Update Available",
+                    $"GazeStick v{latest} is available. Click here to download.",
+                    ToolTipIcon.Info);
+            }
+        }
+        catch { }
     }
 
     private void OnGazeReceived(GazePoint gaze)
@@ -163,9 +194,38 @@ public sealed class TrayApplicationContext : ApplicationContext
             _mapper.Reset();
             _pad.Reset();
         }
+        _trayIcon.Icon = _isActive ? _appIcon : GetInactiveIcon();
         UpdateTrayText();
         if (_popup != null && !_popup.IsDisposed)
             _popup.IsActive = _isActive;
+    }
+
+    private Icon GetInactiveIcon()
+    {
+        if (_inactiveIconCreated)
+            return _inactiveIcon!;
+
+        try
+        {
+            using var bitmap = _appIcon.ToBitmap();
+            for (int x = 0; x < bitmap.Width; x++)
+            {
+                for (int y = 0; y < bitmap.Height; y++)
+                {
+                    var pixel = bitmap.GetPixel(x, y);
+                    int gray = (int)(pixel.R * 0.3 + pixel.G * 0.59 + pixel.B * 0.11);
+                    gray = Math.Clamp(gray, 0, 255);
+                    bitmap.SetPixel(x, y, Color.FromArgb(pixel.A, gray, gray, gray));
+                }
+            }
+            _inactiveIcon = Icon.FromHandle(bitmap.GetHicon());
+            _inactiveIconCreated = true;
+        }
+        catch
+        {
+            _inactiveIcon = _appIcon;
+        }
+        return _inactiveIcon!;
     }
 
     private void UpdateTrayText()
@@ -173,13 +233,13 @@ public sealed class TrayApplicationContext : ApplicationContext
         string status;
 
         if (!_tracker.IsConnected)
-            status = "Awaiting Beam";
+            status = "Waiting for Beam Eye Tracker...";
         else if (!_isActive)
-            status = "OFF";
+            status = "OFF  |  Left-click or F9 to toggle";
         else
-            status = "ON";
+            status = "ON  |  Left-click or F9 to toggle";
 
-        _trayIcon.Text = $"GazeStick — {status} (Slot #{_pad.CurrentSlot})";
+        _trayIcon.Text = $"GazeStick — {status}";
     }
 
     private void OnTrayMouseClick(object? sender, MouseEventArgs e)

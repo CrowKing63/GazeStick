@@ -40,13 +40,12 @@ body {
 
 /* Hero */
 .hero {
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   text-align: center;
-  padding: 80px 24px;
+  padding: 64px 24px 40px;
   position: relative;
   overflow: hidden;
 }
@@ -134,6 +133,45 @@ body {
 .btn-secondary:hover {
   border-color: var(--text-muted);
   background: var(--surface);
+}
+
+.hero-video-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 40px;
+  padding: 8px 16px 8px 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  transition: border-color 0.2s, transform 0.2s;
+  cursor: pointer;
+}
+
+.hero-video-card:hover {
+  border-color: var(--green);
+  transform: translateY(-1px);
+}
+
+.hero-video-card img {
+  width: 120px;
+  height: auto;
+  border-radius: 4px;
+  display: block;
+}
+
+.play-icon {
+  font-size: 24px;
+  color: var(--green);
+  flex-shrink: 0;
+}
+
+.hero-video-label {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 /* Section */
@@ -667,6 +705,12 @@ body {
       View on GitHub
     </a>
   </div>
+
+  <a href="#demo" class="hero-video-card">
+    <img src="https://img.youtube.com/vi/ZjwA1SRjoVQ/hqdefault.jpg" alt="Demo video thumbnail" loading="lazy" />
+    <span class="play-icon">&#9654;</span>
+    <span class="hero-video-label">Watch Demo</span>
+  </a>
 </section>
 
 <!-- Demo Video -->
@@ -1008,9 +1052,9 @@ body {
     </div>
     <p class="license">
       This project is <a href="https://github.com/CrowKing63/GazeStick/blob/main/LICENSE">MIT Licensed</a>.
-      GazeStick uses the Beam Eye Tracker SDK which includes third-party components under
+      GazeStick uses the Beam Eye Tracker SDK (v2.1.0) which includes third-party components under
       MPL-2.0, ISC, BSD-3-Clause, MIT, and Boost licenses.
-      <br>See <a href="https://github.com/CrowKing63/GazeStick/tree/main/beam-sdk">beam-sdk/</a> for details.
+      <br>See <a href="https://docs.beam.eyeware.tech/">docs.beam.eyeware.tech</a> for SDK details.
     </p>
   </div>
 </footer>

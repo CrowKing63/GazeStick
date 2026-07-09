@@ -2,6 +2,9 @@ bin/
 obj/
 .vs/
 beam-sdk/
+lib/
+_beam_sdk_temp.zip
+_beam_sdk_temp_extract/
 *.user
 *.suo
 GazeStick-*.zip
@@ -9,3 +12,6 @@ publish/
 publish_test/
 stdout.txt
 stderr.txt
+.hermes/
+demo.gif
+demo.webm

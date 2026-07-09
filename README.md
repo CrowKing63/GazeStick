@@ -9,28 +9,52 @@ GazeStick captures gaze data from the [Beam Eye Tracker](https://beam.eyeware.te
 - **Windows 10 or 11** (x64)
 - **ViGEmBus driver** — [Download](https://github.com/nefarius/ViGEmBus/releases/latest)
 - **Beam Eye Tracker app** — [Download](https://beam.eyeware.tech/) (free tier works)
-- **Beam SDK native DLL** (`beam_eye_tracker_client.dll`) — included in the SDK package from [docs.beam.eyeware.tech](https://docs.beam.eyeware.tech/)
+- **Beam SDK native DLL** (`beam_eye_tracker_client.dll`) — downloaded automatically by `scripts/fetch-sdk.ps1`
 
 ## Setup
 
 1. Install [ViGEmBus](https://github.com/nefarius/ViGEmBus/releases/latest) and restart if prompted
 2. Install and run the [Beam Eye Tracker](https://beam.eyeware.tech/) app, sign in, and activate **Gaming Extensions**
-3. Download the Beam SDK and copy `beam-sdk/bin/win64/beam_eye_tracker_client.dll` to a convenient location
+3. Run `scripts/fetch-sdk.ps1` to download the Beam SDK DLL (or place it manually in `lib/`)
 4. Build GazeStick (see below) or download a release
 
-### SDK DLL placement
+### Beam SDK
+
+This project uses **Beam SDK 2.1.0** (raw tracking signal mode). The required native DLL (`beam_eye_tracker_client.dll`) is downloaded automatically from the official source by running:
+
+```powershell
+scripts/fetch-sdk.ps1
+```
+
+The DLL is placed in `lib/` and auto-copied to the build output. The SDK itself is not redistributed as a standalone package in this repository.
+
+### SDK DLL placement (manual alternative)
 
 Place `beam_eye_tracker_client.dll` in one of these locations:
-- `beam-sdk/bin/win64/beam_eye_tracker_client.dll` (project root, auto-copied on build)
+- `lib/beam_eye_tracker_client.dll` (project root, auto-copied on build)
 - Same directory as `GazeStick.exe`
 
 ## Build
 
 ```powershell
+# 1. Fetch the Beam SDK DLL (required once)
+scripts/fetch-sdk.ps1
+
+# 2. Build the portable version (framework-dependent)
 dotnet publish -c Release -r win-x64 --self-contained false
 ```
 
 Output: `bin/Release/net8.0-windows/win-x64/GazeStick.exe`
+
+### Package for distribution
+
+```powershell
+# Portable zip
+package.ps1
+
+# Installer (requires Inno Setup)
+scripts/build-installer.ps1
+```
 
 ## Usage
 

@@ -9,8 +9,7 @@
     <ApplicationIcon>Resources\icon.ico</ApplicationIcon>
     <Platforms>x64</Platforms>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <Version>1.0.1</Version>
-    <FileVersion>1.0.1</FileVersion>
+    <Version>1.0.2</Version>
     <Description>Webcam eye tracking to virtual gamepad right stick converter</Description>
     <Company>GazeStick</Company>
     <Product>GazeStick</Product>
@@ -28,8 +27,8 @@
     <EmbeddedResource Include="Resources\icon.ico" />
   </ItemGroup>
 
-  <Target Name="CopyBeamDll" AfterTargets="AfterBuild">
-    <Copy SourceFiles="beam-sdk\bin\win64\beam_eye_tracker_client.dll" DestinationFolder="$(OutDir)" Condition="Exists('beam-sdk\bin\win64\beam_eye_tracker_client.dll')" />
+  <Target Name="CopyBeamDll" AfterTargets="AfterBuild" Condition="Exists('lib\beam_eye_tracker_client.dll')">
+    <Copy SourceFiles="lib\beam_eye_tracker_client.dll" DestinationFolder="$(OutDir)" />
   </Target>
 
 </Project>

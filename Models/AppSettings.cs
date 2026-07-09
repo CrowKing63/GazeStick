@@ -14,4 +14,5 @@ public sealed class AppSettings
     public bool StartActive { get; set; } = true;
     public CurveType Curve { get; set; } = CurveType.Linear;
     public double CurvePower { get; set; } = 2.0;
+    public bool ShowOnboarding { get; set; } = true;
 }

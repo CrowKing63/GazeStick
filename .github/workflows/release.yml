@@ -20,51 +20,71 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      - name: Publish (framework-dependent)
-        run: dotnet publish -c Release -r win-x64 --self-contained false -o publish
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress
 
-      - name: Download Beam SDK DLL
-        shell: pwsh
-        run: |
-          $url = "${{ secrets.BEAM_SDK_DLL_URL }}"
-          if ($url -ne "") {
-            $out = "publish/beam_eye_tracker_client.dll"
-            Write-Host "Downloading beam_eye_tracker_client.dll ..."
-            Invoke-WebRequest -Uri $url -OutFile $out
-            if (Test-Path $out) {
-              Write-Host "DLL downloaded successfully ($((Get-Item $out).Length) bytes)"
-            }
-          } else {
-            Write-Warning "BEAM_SDK_DLL_URL secret not set. The release zip will NOT include beam_eye_tracker_client.dll."
-            Write-Warning "To fix this, add the secret in GitHub repo Settings > Secrets and variables > Actions."
-            Write-Warning "The URL should point to a direct download of the DLL from the Beam SDK package."
-          }
-
-      - name: Create release archive
+      - name: Extract version from tag
         shell: pwsh
         run: |
           $version = "${{ github.ref_name }}".TrimStart('v')
-          $zipName = "GazeStick-$version-win-x64.zip"
-          Compress-Archive -Path publish\* -DestinationPath $zipName
-          Write-Host "Created $zipName"
+          Write-Host "RELEASE_VERSION=$version"
+          Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_VERSION=$version"
 
+      - name: Fetch Beam SDK
+        shell: pwsh
+        run: scripts/fetch-sdk.ps1
+
+      # --- Portable build (framework-dependent) ---
+      - name: Publish (portable)
+        run: dotnet publish -c Release -r win-x64 --self-contained false -p:Version=${{ env.RELEASE_VERSION }} -o publish-portable
+      - name: Copy DLL (portable)
+        shell: pwsh
+        run: Copy-Item lib/beam_eye_tracker_client.dll publish-portable/
+      - name: Package portable zip
+        shell: pwsh
+        run: Compress-Archive -Path publish-portable\* -DestinationPath "GazeStick-portable-${{ env.RELEASE_VERSION }}-win-x64.zip"
+
+      # --- Installer build (self-contained) ---
+      - name: Publish (installer)
+        run: dotnet publish -c Release -r win-x64 --self-contained true -p:Version=${{ env.RELEASE_VERSION }} -o publish-installer
+      - name: Copy DLL (installer)
+        shell: pwsh
+        run: Copy-Item lib/beam_eye_tracker_client.dll publish-installer/
+      - name: Build installer
+        shell: pwsh
+        run: iscc scripts/setup.iss /DMyAppVersion="${{ env.RELEASE_VERSION }}" /DSourcePath="$Env:GITHUB_WORKSPACE\publish-installer"
+
+      # --- Release ---
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: GazeStick-*.zip
-          fail_on_unmatched_files: false
+          files: |
+            GazeStick-portable-*.zip
+            GazeStick-setup-*.exe
           body: |
-            ## GazeStick ${{ github.ref_name }}
+            ## GazeStick v${{ env.RELEASE_VERSION }}
 
-            ### Prerequisites
+            ### Downloads
+
+            | Package | Description |
+            |---------|-------------|
+            | **GazeStick-portable-${{ env.RELEASE_VERSION }}-win-x64.zip** | Portable (no installation, just unzip and run). Requires .NET 8 Desktop Runtime and ViGEmBus. |
+            | **GazeStick-setup-${{ env.RELEASE_VERSION }}.exe** | Installer (recommended for most users). Self-contained, includes .NET runtime. Checks for ViGEmBus. |
+
+            ### Prerequisites (for portable version)
             - [ViGEmBus driver](https://github.com/nefarius/ViGEmBus/releases/latest) (install and restart)
             - [Beam Eye Tracker app](https://beam.eyeware.tech/) (running, signed in, with Gaming Extensions activated)
             - .NET 8 Desktop Runtime ([download](https://dotnet.microsoft.com/en-us/download/dotnet/8.0))
 
-            ### Installation
+            ### Installation (portable)
             1. Install prerequisites listed above.
             2. Extract the zip archive to any folder.
             3. Run `GazeStick.exe`.
+
+            ### Installation (installer)
+            1. Run the installer — it will check for ViGEmBus and guide you.
+            2. GazeStick will be installed to Program Files and added to the Start Menu.
+            3. Launch from the Start Menu or desktop shortcut.
 
             ### Disclaimers
             - **Non-Medical Device:** This software and the underlying Beam Eye Tracker SDK are not medical devices. They are not intended, nor should they be used, to replace professional medical advice, diagnosis, or treatment.
