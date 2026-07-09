@@ -173,36 +173,28 @@ begin
 end;
 
 function InitializeSetup: Boolean;
-var
-  ErrorCode: Integer;
 begin
   Result := True;
+end;
 
-  if not IsViGEmInstalled then
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssInstall then
   begin
-    if not InstallViGEmBus then
+    if not IsViGEmInstalled then
     begin
-      if MsgBox(
-        'ViGEmBus driver is required for GazeStick to work.' + #13#10 +
-        'You can install it later manually.' + #13#10#13#10 +
-        'Continue with GazeStick installation anyway?',
-        mbConfirmation, MB_YESNO) = IDNO then
+      WizardForm.StatusLabel.Caption := 'Setting up ViGEmBus driver...';
+      WizardForm.ProgressGauge.Style := npbstMarquee;
+
+      if not InstallViGEmBus then
       begin
-        Result := False;
-        Exit;
+        MsgBox(
+          'ViGEmBus driver could not be installed automatically.' + #13#10 +
+          'GazeStick needs ViGEmBus to create the virtual controller.' + #13#10#13#10 +
+          'You can install it later manually from:' + #13#10 +
+          'https://github.com/nefarius/ViGEmBus/releases/latest',
+          mbInformation, MB_OK);
       end;
     end;
   end;
-
-  // .NET 8 Desktop Runtime is bundled with the self-contained installer.
-  // No separate .NET installation is needed.
-  // If switching to a framework-dependent build in the future,
-  // uncomment below to auto-install .NET 8:
-  //
-  // if not IsDotNet8DesktopInstalled then
-  //   if not InstallDotNet8 then
-  //   begin
-  //     Result := False;
-  //     Exit;
-  //   end;
 end;
