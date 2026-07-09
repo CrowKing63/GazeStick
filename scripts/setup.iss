@@ -122,17 +122,21 @@ begin
     end;
   end;
 
-  if not Exec(DestPath, '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /ALLUSERS', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then
+  // Launch installer (shows UI — user clicks through the wizard)
+  if Exec(DestPath, '', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0) then
   begin
-    if MsgBox('ViGEmBus installation failed (error code: ' + IntToStr(ResultCode) + ').' + #13#10 +
-      'Open the download page to install it manually?',
-      mbError, MB_YESNO) = IDYES then
-    begin
-      ShellExec('open', 'https://github.com/nefarius/ViGEmBus/releases/tag/v1.22.0', '', '', SW_SHOWNORMAL, ewNoWait, ResultCode);
-    end;
-    Result := False;
+    Result := True;
     Exit;
   end;
+
+  if MsgBox('ViGEmBus installation failed (error code: ' + IntToStr(ResultCode) + ').' + #13#10 +
+    'Open the download page to install it manually?',
+    mbError, MB_YESNO) = IDYES then
+  begin
+    ShellExec('open', 'https://github.com/nefarius/ViGEmBus/releases/tag/v1.22.0', '', '', SW_SHOWNORMAL, ewNoWait, ResultCode);
+  end;
+  Result := False;
+  Exit;
 
   Result := True;
 end;
