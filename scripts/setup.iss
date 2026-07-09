@@ -65,19 +65,15 @@ begin
 end;
 
 function InitializeSetup: Boolean;
-var
-  ErrorCode: Integer;
 begin
   Result := True;
   if not IsViGEmInstalled then
   begin
-    if MsgBox(
+    MsgBox(
       'ViGEmBus driver was not detected on this system.' + #13#10 + #13#10 +
       'GazeStick requires ViGEmBus to create a virtual Xbox 360 controller.' + #13#10 +
-      'Would you like to download and install it now?',
-      mbConfirmation, MB_YESNO) = IDYES then
-    begin
-      ShellExec('open', 'https://github.com/nefarius/ViGEmBus/releases/latest', '', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
-    end;
+      'Please install it from: https://github.com/nefarius/ViGEmBus/releases/latest' + #13#10 +
+      '(You can also continue with the installation, but GazeStick will not work without ViGEmBus.)',
+      mbInformation, MB_OK);
   end;
 end;
