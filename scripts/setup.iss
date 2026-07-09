@@ -104,19 +104,25 @@ begin
   begin
     if not DownloadFile(ViGEmUrl, DestPath) then
     begin
-      MsgBox('Failed to download ViGEmBus driver. Please install it manually from:' + #13#10 +
-        'https://github.com/nefarius/ViGEmBus/releases/latest',
-        mbError, MB_OK);
+      if MsgBox('Failed to download ViGEmBus driver.' + #13#10 +
+        'Open the download page in your browser?',
+        mbError, MB_YESNO) = IDYES then
+      begin
+        ShellExec('open', 'https://github.com/nefarius/ViGEmBus/releases/latest', '', '', SW_SHOWNORMAL, ewNoWait, ResultCode);
+      end;
       Result := False;
       Exit;
     end;
   end;
 
-  if not Exec('msiexec.exe', '/i "' + DestPath + '" /quiet /norestart', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then
+  if not Exec('msiexec.exe', '/i "' + DestPath + '" ALLUSERS=1 /quiet /norestart', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then
   begin
-    MsgBox('ViGEmBus installation failed (error code: ' + IntToStr(ResultCode) + ').' + #13#10 +
-      'Please install it manually and run this installer again.',
-      mbError, MB_OK);
+    if MsgBox('ViGEmBus installation failed (error code: ' + IntToStr(ResultCode) + ').' + #13#10 +
+      'Open the download page to install it manually?',
+      mbError, MB_YESNO) = IDYES then
+    begin
+      ShellExec('open', 'https://github.com/nefarius/ViGEmBus/releases/latest', '', '', SW_SHOWNORMAL, ewNoWait, ResultCode);
+    end;
     Result := False;
     Exit;
   end;
@@ -156,6 +162,8 @@ begin
 end;
 
 function InitializeSetup: Boolean;
+var
+  ErrorCode: Integer;
 begin
   Result := True;
 
@@ -163,8 +171,15 @@ begin
   begin
     if not InstallViGEmBus then
     begin
-      Result := False;
-      Exit;
+      if MsgBox(
+        'ViGEmBus driver is required for GazeStick to work.' + #13#10 +
+        'You can install it later manually.' + #13#10#13#10 +
+        'Continue with GazeStick installation anyway?',
+        mbConfirmation, MB_YESNO) = IDNO then
+      begin
+        Result := False;
+        Exit;
+      end;
     end;
   end;
 
