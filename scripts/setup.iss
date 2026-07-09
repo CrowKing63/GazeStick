@@ -56,11 +56,8 @@ Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: po
 [Code]
 const
   ViGEmRegKey = 'SYSTEM\CurrentControlSet\Services\vigem';
-  ViGEmUrl = 'https://github.com/nefarius/ViGEmBus/releases/latest/download/ViGEmBusSetup_x64.msi';
+  ViGEmUrl = 'https://github.com/nefarius/ViGEmBus/releases/download/v1.22.0/ViGEmBus_1.22.0_x64_x86_arm64.exe';
   DotNet8Url = 'https://aka.ms/dotnet/8.0/desktop/runtime/windows-x64.exe';
-
-function URLDownloadToFileW(pCaller: Integer; szURL: string; szFileName: string; dwReserved: Integer; lpfnCB: Integer): Integer;
-external 'URLDownloadToFileW@urlmon.dll stdcall';
 
 function IsViGEmInstalled: Boolean;
 var
@@ -89,16 +86,26 @@ begin
 end;
 
 function DownloadFile(Url, DestPath: string): Boolean;
+var
+  ResultCode: Integer;
+  TmpScript: string;
 begin
-  Result := URLDownloadToFileW(0, Url, DestPath, 0, 0) = 0;
+  TmpScript := ExpandConstant('{tmp}\dl.ps1');
+  SaveStringToFile(TmpScript,
+    '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;' + #13#10 +
+    'Invoke-WebRequest -Uri "' + Url + '" -OutFile "' + DestPath + '"',
+    False);
+  Result := Exec('powershell.exe', '-ExecutionPolicy Bypass -File "' + TmpScript + '"', '',
+    SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0);
 end;
 
 function InstallViGEmBus: Boolean;
 var
   DestPath: string;
   ResultCode: Integer;
+  TmpScript: string;
 begin
-  DestPath := ExpandConstant('{tmp}\ViGEmBusSetup_x64.msi');
+  DestPath := ExpandConstant('{tmp}\ViGEmBus_1.22.0_x64_x86_arm64.exe');
 
   if not FileExists(DestPath) then
   begin
@@ -108,20 +115,20 @@ begin
         'Open the download page in your browser?',
         mbError, MB_YESNO) = IDYES then
       begin
-        ShellExec('open', 'https://github.com/nefarius/ViGEmBus/releases/latest', '', '', SW_SHOWNORMAL, ewNoWait, ResultCode);
+        ShellExec('open', 'https://github.com/nefarius/ViGEmBus/releases/tag/v1.22.0', '', '', SW_SHOWNORMAL, ewNoWait, ResultCode);
       end;
       Result := False;
       Exit;
     end;
   end;
 
-  if not Exec('msiexec.exe', '/i "' + DestPath + '" ALLUSERS=1 /quiet /norestart', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then
+  if not Exec(DestPath, '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /ALLUSERS', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then
   begin
     if MsgBox('ViGEmBus installation failed (error code: ' + IntToStr(ResultCode) + ').' + #13#10 +
       'Open the download page to install it manually?',
       mbError, MB_YESNO) = IDYES then
     begin
-      ShellExec('open', 'https://github.com/nefarius/ViGEmBus/releases/latest', '', '', SW_SHOWNORMAL, ewNoWait, ResultCode);
+      ShellExec('open', 'https://github.com/nefarius/ViGEmBus/releases/tag/v1.22.0', '', '', SW_SHOWNORMAL, ewNoWait, ResultCode);
     end;
     Result := False;
     Exit;
