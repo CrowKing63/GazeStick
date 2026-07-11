@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <Compile Remove="beam-sdk\**\*.cs" />
+    <Compile Remove="tests\**\*.cs" />
     <None Remove="beam-sdk\**\*" />
     <EmbeddedResource Include="Resources\icon.ico" />
   </ItemGroup>

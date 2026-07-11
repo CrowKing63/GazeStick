@@ -4,6 +4,8 @@ namespace GazeStick.Services;
 
 public sealed class StickMapper
 {
+    private const bool UseCircularNormalization = true;
+
     private readonly object _lock = new();
     private double _prevX = 0.0;
     private double _prevY = 0.0;
@@ -17,7 +19,15 @@ public sealed class StickMapper
         double dx = gaze.X - 0.5;
         double dy = gaze.Y - 0.5;
 
-        double distance = Math.Sqrt(dx * dx + dy * dy);
+        // This is the half-range of the normalized gaze coordinate space [0,1],
+        // NOT screen pixel dimensions. Aspect ratio is already baked into gaze.X/Y by the SDK.
+        const double normalizedHalfRangeX = 0.5;
+        const double normalizedHalfRangeY = 0.5;
+
+        double nxRaw = dx / normalizedHalfRangeX;
+        double nyRaw = dy / normalizedHalfRangeY;
+
+        double distance = Math.Sqrt(nxRaw * nxRaw + nyRaw * nyRaw);
         double deadzone = Math.Clamp(settings.Deadzone, 0.0, 0.5);
 
         if (distance < deadzone)
@@ -34,12 +44,22 @@ public sealed class StickMapper
         double scale = (distance - deadzone) / (1.0 - deadzone);
         scale = ApplyCurve(scale, settings.Curve, settings.CurvePower);
 
-        double nx = (dx / distance) * scale;
-        double ny = (dy / distance) * scale;
+        double nx = (nxRaw / distance) * scale;
+        double ny = (nyRaw / distance) * scale;
 
         double sensitivity = Math.Clamp(settings.Sensitivity, 0.1, 5.0);
         nx = Math.Clamp(nx * sensitivity, -1.0, 1.0);
         ny = Math.Clamp(ny * sensitivity, -1.0, 1.0);
+
+        if (UseCircularNormalization)
+        {
+            double mag = Math.Sqrt(nx * nx + ny * ny);
+            if (mag > 1.0)
+            {
+                nx = nx / mag;
+                ny = ny / mag;
+            }
+        }
 
         double smoothing = Math.Clamp(settings.Smoothing, 0.0, 0.9);
 

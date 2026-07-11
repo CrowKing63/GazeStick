@@ -142,6 +142,15 @@ See GazeStick in action playing an open-world third-person game:
 
 ---
 
+## Changelog
+
+### v1.1.0 (unreleased)
+
+- **Gaze→stick mapping changed** from axis-independent clamping to circular (magnitude) normalization.
+- Diagonal maximum sensitivity reduced by ~29% (1/√2). Users who tuned reWASD curves or sensitivity for diagonal responsiveness may need readjustment.
+
+---
+
 ## License
 
 MIT
