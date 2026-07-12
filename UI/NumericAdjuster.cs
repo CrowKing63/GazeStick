@@ -41,13 +41,13 @@ public class NumericAdjuster : UserControl
     public NumericAdjuster()
     {
         Height = 36;
-        Width = 220;
+        Width = 340;
         BackColor = Color.Transparent;
 
         _btnMinus = new Button
         {
             Text = "−",
-            Width = 32,
+            Width = 40,
             Height = 32,
             Location = new Point(0, 2),
             FlatStyle = FlatStyle.Flat,
@@ -62,8 +62,8 @@ public class NumericAdjuster : UserControl
 
         _valuePanel = new Panel
         {
-            Location = new Point(36, 2),
-            Size = new Size(148, 32),
+            Location = new Point(44, 2),
+            Size = new Size(252, 32),
             BackColor = Color.FromArgb(35, 35, 38),
             BorderStyle = BorderStyle.FixedSingle,
         };
@@ -90,9 +90,9 @@ public class NumericAdjuster : UserControl
         _btnPlus = new Button
         {
             Text = "+",
-            Width = 32,
+            Width = 40,
             Height = 32,
-            Location = new Point(188, 2),
+            Location = new Point(300, 2),
             FlatStyle = FlatStyle.Flat,
             Font = new Font("Segoe UI", 12f, FontStyle.Bold),
             ForeColor = Color.FromArgb(200, 200, 200),
@@ -106,6 +106,7 @@ public class NumericAdjuster : UserControl
         _toolTip.SetToolTip(_valuePanel, "Drag to adjust continuously");
 
         Controls.AddRange(new Control[] { _btnMinus, _valuePanel, _btnPlus });
+        Resize += (_, _) => UpdateLayout();
     }
 
     public void Initialize(double value, double min, double max, double step, int decimals)
@@ -160,6 +161,16 @@ public class NumericAdjuster : UserControl
     private void UpdateDisplay()
     {
         _lblValue.Text = _value.ToString(_format);
+    }
+
+    private void UpdateLayout()
+    {
+        const int buttonWidth = 40;
+        const int gap = 4;
+        _btnMinus.Location = new Point(0, 2);
+        _btnPlus.Location = new Point(Math.Max(buttonWidth + gap, Width - buttonWidth), 2);
+        _valuePanel.Location = new Point(buttonWidth + gap, 2);
+        _valuePanel.Size = new Size(Math.Max(40, Width - (buttonWidth * 2) - (gap * 2)), 32);
     }
 
     public void SetEnabledState(bool enabled)

@@ -815,7 +815,7 @@ body {
   <div class="container">
     <div class="section-header">
       <h2>How It Works</h2>
-      <p>Gaze data flows from your webcam through the Beam Eye Tracker app into GazeStick, which drives a virtual Xbox controller.</p>
+      <p>Gaze data flows from your webcam through the Beam Eye Tracker app into GazeStick, which drives a selectable virtual Xbox 360 or DualShock 4 controller.</p>
     </div>
 
     <div class="flow">
@@ -836,7 +836,7 @@ body {
       <span class="flow-arrow">→</span>
       <div class="flow-item">
         <span class="icon">🎮</span>
-        <span class="label">Xbox Controller</span>
+        <span class="label">Virtual Controller</span>
       </div>
       <span class="flow-arrow">→</span>
       <div class="flow-item">
@@ -864,7 +864,7 @@ body {
       <div class="feature-card">
         <span class="icon">📈</span>
         <h3>Sensitivity Control</h3>
-        <p>Adjust how far you need to look for full stick deflection. Fine-tune from 0.1x to 5.0x to match your preference.</p>
+        <p>Adjust how far you need to look for full stick deflection. The default is 2.0x; fine-tune from 0.1x to 5.0x to match your preference.</p>
       </div>
       <div class="feature-card">
         <span class="icon">🔄</span>
@@ -902,7 +902,7 @@ body {
       <div class="prereq-card">
         <span class="num">1</span>
         <h3>ViGEmBus Driver</h3>
-        <p>Virtual gamepad emulation driver that creates the Xbox 360 controller GazeStick outputs to. Install and restart once.</p>
+        <p>Virtual gamepad emulation driver that creates GazeStick's Xbox 360 or DualShock 4 controller output. Install and restart once.</p>
         <a href="https://github.com/nefarius/ViGEmBus/releases/latest" target="_blank" rel="noopener">
           Download ViGEmBus →
         </a>
@@ -1028,7 +1028,7 @@ body {
       <div class="mock-param">
         <div class="row">
           <span class="label">Sensitivity</span>
-          <span class="value">1.0</span>
+          <span class="value">2.0</span>
         </div>
         <div class="mock-slider"><div class="fill" style="width:50%"></div></div>
       </div>
@@ -1054,11 +1054,12 @@ body {
         </thead>
         <tbody>
           <tr><td><code>deadzone</code></td><td>Circular deadzone radius (0.00–0.50)</td><td>0.10</td></tr>
-          <tr><td><code>sensitivity</code></td><td>Stick output multiplier (0.1–5.0)</td><td>1.0</td></tr>
+          <tr><td><code>sensitivity</code></td><td>Stick output multiplier (0.1–5.0)</td><td>2.0</td></tr>
           <tr><td><code>smoothing</code></td><td>EMA smoothing factor (0.0–0.9)</td><td>0.30</td></tr>
           <tr><td><code>invertY</code></td><td>Invert Y-axis output</td><td>false</td></tr>
           <tr><td><code>toggleHotkey</code></td><td>Global toggle hotkey</td><td>F9</td></tr>
-          <tr><td><code>startWithWindows</code></td><td>Auto-start with Windows</td><td>true</td></tr>
+          <tr><td><code>outputType</code></td><td>Virtual controller output mode</td><td>Xbox360</td></tr>
+          <tr><td><code>startWithWindows</code></td><td>Auto-start with Windows</td><td>false</td></tr>
           <tr><td><code>startActive</code></td><td>Start with tracking active</td><td>true</td></tr>
         </tbody>
       </table>
@@ -1084,7 +1085,7 @@ body {
             subgraph GS["GazeStick"]
                 TS[TrackingService<br/>Polls Beam SDK ~60fps]
                 SM[StickMapper<br/>Deadzone → Sensitivity → Smoothing]
-                VP[VirtualPad<br/>ViGEm Xbox 360 Controller]
+                VP[VirtualPad<br/>ViGEm Xbox 360 or DualShock 4]
                 TA[TrayApp<br/>System Tray UI + Hotkeys]
             end
 
@@ -1112,9 +1113,9 @@ body {
     </div>
 
     <div class="combination">
-      <h3>Pair with reWASD or Similar Tools</h3>
-      <p>GazeStick is designed to be one piece of your input setup. Use controller remapping software like <a href="https://www.rewasd.com/" target="_blank" rel="noopener">reWASD</a> to merge GazeStick's virtual Xbox controller with your physical controller, keyboard, or mouse. Each tool handles one aspect of input, and a remapping layer ties them together.</p>
-      <p style="font-size:0.9rem; color: var(--text-muted);">This is the standard accessibility pattern: dedicated tools feeding into a unified input layer.</p>
+      <h3>Pair with your preferred input tools</h3>
+      <p>GazeStick is designed to be one piece of your input setup. Use controller-mapping or device-combination software to combine its virtual controller with physical controllers, keyboard, mouse, or other inputs.</p>
+      <p style="font-size:0.9rem; color: var(--text-muted);">Xbox 360 mode offers broad game compatibility. DualShock 4 mode does not consume one of Windows' four XInput controller slots, but may require game or mapping-layer DS4 support.</p>
     </div>
   </div>
 </section>

@@ -13,20 +13,27 @@ public static class AutoStartManager
         return key?.GetValue(AppName) != null;
     }
 
-    public static void SetEnabled(bool enabled)
+    public static bool SetEnabled(bool enabled)
     {
-        using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath, true);
-        if (key == null) return;
-
-        if (enabled)
+        try
         {
-            var exePath = Environment.ProcessPath;
-            if (!string.IsNullOrEmpty(exePath))
+            using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath, true);
+            if (key == null) return false;
+            if (enabled)
+            {
+                var exePath = Environment.ProcessPath;
+                if (string.IsNullOrEmpty(exePath)) return false;
                 key.SetValue(AppName, $"\"{exePath}\"");
+            }
+            else
+            {
+                key.DeleteValue(AppName, false);
+            }
+            return true;
         }
-        else
+        catch
         {
-            key.DeleteValue(AppName, false);
+            return false;
         }
     }
 }

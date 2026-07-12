@@ -5,12 +5,10 @@ namespace GazeStick.Services;
 public interface IVirtualPadService : IDisposable
 {
     bool IsConnected { get; }
-    int CurrentSlot { get; }
-    event Action<int>? SlotChanged;
     event Action<string>? ErrorOccurred;
 
-    bool Initialize(int preferredSlot = 0);
-    void SetSlot(int slot);
+    bool Initialize(OutputType outputType);
+    bool SetOutputType(OutputType outputType);
     void Update(StickOutput output);
     void Reset();
 }

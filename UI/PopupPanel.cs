@@ -4,33 +4,29 @@ using GazeStick.Models;
 
 namespace GazeStick.UI;
 
-public class PopupPanel : Form
+public sealed class PopupPanel : Form
 {
-    private readonly Label _lblStatus;
-    private readonly Label _lblBeamStatus;
-    private readonly Label _lblSlotInfo;
-    private readonly Label _lblHotkeyBadge;
-    private readonly Label _lblInvertYBadge;
-    private readonly Label _lblCurveBadge;
-    private readonly Label _lblDeadzoneTitle;
-    private readonly Label _lblSensitivityTitle;
-    private readonly Label _lblSmoothingTitle;
-    private readonly Label _lblCurveTitle;
-    private readonly Label _lblAutoStart;
-    private readonly Label _lblReset;
-    private readonly NumericAdjuster _deadzoneCtrl;
-    private readonly NumericAdjuster _sensitivityCtrl;
-    private readonly NumericAdjuster _smoothingCtrl;
-    private readonly NumericAdjuster _curvePowerCtrl;
-    private readonly Button _btnExit;
-    private readonly ToggleButton _toggleBtn;
+    private readonly Label _statusLabel;
+    private readonly Label _beamStatusLabel;
+    private readonly NumericAdjuster _deadzoneControl;
+    private readonly NumericAdjuster _sensitivityControl;
+    private readonly NumericAdjuster _smoothingControl;
+    private readonly NumericAdjuster _curvePowerControl;
+    private readonly Button _toggleButton;
+    private readonly Button _xboxButton;
+    private readonly Button _ds4Button;
+    private readonly Button _invertYButton;
+    private readonly Button _hotkeyButton;
+    private readonly Button _autoStartButton;
+    private readonly Button _curveButton;
+    private readonly Label _settingsNotice;
     private bool _isActive;
     private bool _isBeamConnected;
     private bool _awaitingHotkey;
-    private int _padSlot;
     private bool _invertY;
-    private CurveType _curve;
     private bool _autoStart;
+    private CurveType _curve;
+    private OutputType _outputType;
 
     public event Action<bool>? ToggleChanged;
     public event Action<double>? DeadzoneChanged;
@@ -41,337 +37,182 @@ public class PopupPanel : Form
     public event Action<CurveType>? CurveTypeChanged;
     public event Action<double>? CurvePowerChanged;
     public event Action<bool>? AutoStartChanged;
+    public event Action<OutputType>? OutputTypeChanged;
     public event Action? ResetRequested;
-    public event Action? SlotChangeRequested;
     public event Action? ExitRequested;
 
-    public bool IsActive
-    {
-        get => _isActive;
-        set { _isActive = value; UpdateState(); }
-    }
+    public bool IsActive { get => _isActive; set { _isActive = value; UpdateState(); } }
+    public bool IsBeamConnected { get => _isBeamConnected; set { _isBeamConnected = value; UpdateState(); } }
+    public string HotkeyText { set { _hotkeyButton.Text = value; } }
+    public bool InvertY { get => _invertY; set { _invertY = value; UpdateState(); } }
+    public bool AutoStart { get => _autoStart; set { _autoStart = value; UpdateState(); } }
+    public CurveType Curve { get => _curve; set { _curve = value; UpdateState(); } }
+    public OutputType OutputType { get => _outputType; set { _outputType = value; UpdateState(); } }
+    public double CurvePower { set => _curvePowerControl.Value = value; }
+    public double DeadzoneValue { set => _deadzoneControl.Value = value; }
+    public double SensitivityValue { set => _sensitivityControl.Value = value; }
+    public double SmoothingValue { set => _smoothingControl.Value = value; }
+    public bool SuppressAutoClose { get; set; }
 
-    public bool IsBeamConnected
+    public void ShowSettingsNotice(string message)
     {
-        get => _isBeamConnected;
-        set { _isBeamConnected = value; UpdateBeamStatus(); }
-    }
-
-    public int PadSlot
-    {
-        get => _padSlot;
-        set { _padSlot = value; _lblSlotInfo.Text = $"Slot #{value}"; }
-    }
-
-    public string HotkeyText
-    {
-        set => _lblHotkeyBadge.Text = value;
-    }
-
-    public bool InvertY
-    {
-        get => _invertY;
-        set { _invertY = value; UpdateInvertYBadge(); }
-    }
-
-    public CurveType Curve
-    {
-        get => _curve;
-        set { _curve = value; UpdateCurveBadge(); UpdateCurvePowerVisibility(); }
-    }
-
-    public double CurvePower
-    {
-        set => _curvePowerCtrl.Value = value;
-    }
-
-    public double DeadzoneValue
-    {
-        set => _deadzoneCtrl.Value = value;
-    }
-
-    public double SensitivityValue
-    {
-        set => _sensitivityCtrl.Value = value;
-    }
-
-    public double SmoothingValue
-    {
-        set => _smoothingCtrl.Value = value;
-    }
-
-    public bool AutoStart
-    {
-        get => _autoStart;
-        set { _autoStart = value; UpdateAutoStartBadge(); }
+        _settingsNotice.Text = message;
+        _settingsNotice.Visible = true;
     }
 
     public PopupPanel()
     {
-        FormBorderStyle = FormBorderStyle.None;
+        FormBorderStyle = FormBorderStyle.FixedSingle;
         StartPosition = FormStartPosition.Manual;
-        Size = new Size(256, 430);
+        Size = new Size(376, 780);
+        MinimumSize = Size;
+        MaximumSize = Size;
         BackColor = Color.FromArgb(28, 28, 30);
+        ForeColor = Color.White;
         ShowInTaskbar = false;
+        TopMost = true;
         KeyPreview = true;
+        Font = new Font("Segoe UI", 9f);
         KeyDown += OnPanelKeyDown;
-        Font badgeFont = new Font("Segoe UI", 8f, FontStyle.Bold);
+        Deactivate += (_, _) => BeginInvoke(CloseIfInactive);
 
-        int y = 8;
+        int y = 14;
+        var title = new Label { Text = "GazeStick", Font = new Font("Segoe UI", 14f, FontStyle.Bold), ForeColor = Color.White, Location = new Point(16, y), AutoSize = true };
+        _statusLabel = new Label { Location = new Point(260, y + 4), Size = new Size(96, 22), TextAlign = ContentAlignment.MiddleRight, Font = new Font("Segoe UI", 9f, FontStyle.Bold) };
+        y += 32;
+        _beamStatusLabel = new Label { Location = new Point(16, y), Size = new Size(340, 20), Font = new Font("Segoe UI", 9f), TextAlign = ContentAlignment.MiddleLeft };
+        y += 28;
 
-        // Header
-        var appIcon = new Label
-        {
-            Text = "GazeStick",
-            Font = new Font("Segoe UI", 11f, FontStyle.Bold),
-            ForeColor = Color.White,
-            Location = new Point(8, y),
-            AutoSize = true,
-        };
-        _lblStatus = new Label
-        {
-            Text = "●",
-            Font = new Font("Segoe UI", 9f),
-            ForeColor = Color.LimeGreen,
-            Location = new Point(appIcon.Width + 14, y + 4),
-            AutoSize = true,
-        };
-        Controls.Add(appIcon);
-        Controls.Add(_lblStatus);
+        _toggleButton = CreateButton("Tracking: ON", new Point(16, y), new Size(340, 40), Color.FromArgb(35, 100, 45));
+        _toggleButton.AccessibleName = "Toggle eye tracking";
+        _toggleButton.Click += (_, _) => ToggleChanged?.Invoke(!_isActive);
+        y += 54;
+
+        Controls.AddRange(new Control[] { title, _statusLabel, _beamStatusLabel, _toggleButton });
+        AddSectionLabel("Tracking", ref y);
+
+        _deadzoneControl = AddAdjuster("Deadzone", "Neutral radius before stick output begins.", 0.10, 0.0, 0.50, 0.01, 2, ref y);
+        _deadzoneControl.ValueChanged += value => DeadzoneChanged?.Invoke(value);
+        _sensitivityControl = AddAdjuster("Sensitivity", "How far you look for full stick deflection.", 2.0, 0.1, 5.0, 0.1, 1, ref y);
+        _sensitivityControl.ValueChanged += value => SensitivityChanged?.Invoke(value);
+        _smoothingControl = AddAdjuster("Smoothing", "Reduces small, rapid input changes.", 0.30, 0.0, 0.9, 0.05, 2, ref y);
+        _smoothingControl.ValueChanged += value => SmoothingChanged?.Invoke(value);
+
+        AddSectionLabel("Response curve", ref y);
+        _curveButton = CreateButton("Curve: Linear", new Point(16, y), new Size(160, 30), Color.FromArgb(45, 45, 50));
+        _curveButton.Click += (_, _) => CycleCurve();
+        Controls.Add(_curveButton);
         y += 34;
+        _curvePowerControl = AddAdjuster("Curve power", "Used by exponential and logarithmic curves.", 2.0, 0.1, 5.0, 0.1, 1, ref y);
+        _curvePowerControl.ValueChanged += value => CurvePowerChanged?.Invoke(value);
 
-        // Toggle
-        _toggleBtn = new ToggleButton
-        {
-            Location = new Point(8, y),
-            Size = new Size(240, 32),
-        };
-        _toggleBtn.Toggled += val => ToggleChanged?.Invoke(val);
-        Controls.Add(_toggleBtn);
+        AddSectionLabel("Virtual controller output", ref y);
+        _xboxButton = CreateButton("Xbox 360", new Point(16, y), new Size(166, 32), Color.FromArgb(45, 45, 50));
+        _ds4Button = CreateButton("DualShock 4", new Point(190, y), new Size(166, 32), Color.FromArgb(45, 45, 50));
+        _xboxButton.AccessibleName = "Select Xbox 360 output";
+        _ds4Button.AccessibleName = "Select DualShock 4 output";
+        _xboxButton.Click += (_, _) => SelectOutput(OutputType.Xbox360);
+        _ds4Button.Click += (_, _) => SelectOutput(OutputType.DualShock4);
+        Controls.AddRange(new Control[] { _xboxButton, _ds4Button });
+        y += 36;
+        var outputHint = new Label { Text = "DualShock 4 mode does not use an XInput controller slot.", Location = new Point(16, y), Size = new Size(340, 18), ForeColor = Color.FromArgb(180, 180, 185), Font = new Font("Segoe UI", 8f) };
+        Controls.Add(outputHint);
+        y += 26;
+
+        AddSectionLabel("Quick settings", ref y);
+        _invertYButton = CreateButton("Vertical camera: Normal (click to invert)", new Point(16, y), new Size(340, 32), Color.FromArgb(45, 45, 50));
+        y += 36;
+        _autoStartButton = CreateButton("Start with Windows: Off", new Point(16, y), new Size(340, 32), Color.FromArgb(45, 45, 50));
+        y += 36;
+        _hotkeyButton = CreateButton("Toggle hotkey: F9", new Point(16, y), new Size(340, 32), Color.FromArgb(45, 45, 50));
+        _invertYButton.Click += (_, _) => { _invertY = !_invertY; UpdateState(); InvertYChanged?.Invoke(_invertY); };
+        _hotkeyButton.Click += (_, _) => StartHotkeyCapture();
+        _autoStartButton.Click += (_, _) => { _autoStart = !_autoStart; UpdateState(); AutoStartChanged?.Invoke(_autoStart); };
+        Controls.AddRange(new Control[] { _invertYButton, _hotkeyButton, _autoStartButton });
         y += 40;
 
-        // Deadzone
-        _lblDeadzoneTitle = CreateLabel("Deadzone", y);
-        y += 20;
-        _deadzoneCtrl = new NumericAdjuster { Location = new Point(8, y) };
-        _deadzoneCtrl.Initialize(0.10, 0.0, 0.50, 0.01, 2);
-        _deadzoneCtrl.ValueChanged += v => DeadzoneChanged?.Invoke(v);
-        y += 42;
+        _settingsNotice = new Label { Location = new Point(16, y), Size = new Size(340, 18), ForeColor = Color.FromArgb(130, 220, 150), Font = new Font("Segoe UI", 8f, FontStyle.Bold), TextAlign = ContentAlignment.MiddleCenter, Visible = false };
+        Controls.Add(_settingsNotice);
+        y += 24;
 
-        // Sensitivity
-        _lblSensitivityTitle = CreateLabel("Sensitivity", y);
-        y += 20;
-        _sensitivityCtrl = new NumericAdjuster { Location = new Point(8, y) };
-        _sensitivityCtrl.Initialize(1.0, 0.1, 5.0, 0.1, 1);
-        _sensitivityCtrl.ValueChanged += v => SensitivityChanged?.Invoke(v);
-        y += 42;
-
-        // Smoothing
-        _lblSmoothingTitle = CreateLabel("Smoothing", y);
-        y += 20;
-        _smoothingCtrl = new NumericAdjuster { Location = new Point(8, y) };
-        _smoothingCtrl.Initialize(0.30, 0.0, 0.9, 0.05, 2);
-        _smoothingCtrl.ValueChanged += v => SmoothingChanged?.Invoke(v);
-        y += 42;
-
-        // Curve
-        _lblCurveTitle = CreateLabel("Curve", y);
-        y += 20;
-        _lblCurveBadge = CreateBadge("Linear", Color.FromArgb(140, 140, 145), 12, y);
-        _lblCurveBadge.Click += (_, _) => CycleCurve();
-        y += 22;
-
-        _curvePowerCtrl = new NumericAdjuster { Location = new Point(24, y) };
-        _curvePowerCtrl.Initialize(2.0, 0.1, 5.0, 0.1, 1);
-        _curvePowerCtrl.ValueChanged += v => CurvePowerChanged?.Invoke(v);
-        y += 42;
-
-        // Footer panel
-        // Row 0 (y=0):  BeamStatus(left)   InvertYBadge(right-2)  HotkeyBadge(right)
-        // Row 1 (y=20): SlotInfo(left)
-        // Row 2 (y=44): AutoStart  Reset  [spacer]  Exit(right)
-        const int FW = 240; // footer panel inner width
-        var f = new Panel
-        {
-            Location = new Point(8, y),
-            Size = new Size(FW, 72),
-            BackColor = Color.Transparent,
-        };
-
-        _lblBeamStatus = new Label
-        {
-            Text = "○ Beam Connected",
-            Font = new Font("Segoe UI", 8f),
-            ForeColor = Color.FromArgb(140, 140, 145),
-            AutoSize = true,
-            Location = new Point(0, 2),
-        };
-
-        _lblSlotInfo = new Label
-        {
-            Text = "Slot #2",
-            Font = new Font("Segoe UI", 8f),
-            ForeColor = Color.FromArgb(140, 140, 145),
-            AutoSize = true,
-            Location = new Point(0, 22),
-            Cursor = Cursors.Hand,
-        };
-        _lblSlotInfo.Click += (_, _) => SlotChangeRequested?.Invoke();
-
-        // Right-align InvertY and Hotkey badges in row 0 with fixed widths
-        // so positions don't shift when text changes (e.g. "Ctrl+F9", "Y: Inverted")
-        const int HotkeyW = 72;
-        const int InvertYW = 72;
-        const int BadgeGap = 4;
-
-        _lblHotkeyBadge = new Label
-        {
-            Text = "F9",
-            Font = new Font("Segoe UI", 8f, FontStyle.Bold),
-            ForeColor = Color.FromArgb(100, 120, 200),
-            BackColor = Color.FromArgb(40, 40, 45),
-            Size = new Size(HotkeyW, 18),
-            Padding = new Padding(4, 2, 4, 2),
-            Location = new Point(FW - HotkeyW, 0),
-            TextAlign = ContentAlignment.MiddleCenter,
-            Cursor = Cursors.Hand,
-        };
-        _lblHotkeyBadge.Click += (_, _) => StartHotkeyCapture();
-
-        _lblInvertYBadge = new Label
-        {
-            Text = "Y: Normal",
-            Font = new Font("Segoe UI", 8f, FontStyle.Bold),
-            ForeColor = Color.FromArgb(140, 140, 145),
-            BackColor = Color.FromArgb(40, 40, 45),
-            Size = new Size(InvertYW, 18),
-            Padding = new Padding(4, 2, 4, 2),
-            Location = new Point(FW - HotkeyW - BadgeGap - InvertYW, 0),
-            TextAlign = ContentAlignment.MiddleCenter,
-            Cursor = Cursors.Hand,
-        };
-        _lblInvertYBadge.Click += (_, _) => { _invertY = !_invertY; UpdateInvertYBadge(); InvertYChanged?.Invoke(_invertY); };
-
-        // Row 2: AutoStart | Reset | ... | Exit (right-aligned)
-        _lblAutoStart = CreateBadge("Auto ON", Color.FromArgb(140, 140, 145), 0, 46);
-        _lblAutoStart.Click += (_, _) => { _autoStart = !_autoStart; UpdateAutoStartBadge(); AutoStartChanged?.Invoke(_autoStart); };
-
-        _lblReset = CreateBadge("Reset", Color.FromArgb(200, 150, 80), 72, 46);
-        _lblReset.Click += (_, _) => ResetRequested?.Invoke();
-
-        _btnExit = new Button
-        {
-            Text = "Exit",
-            Font = new Font("Segoe UI", 8f, FontStyle.Bold),
-            ForeColor = Color.FromArgb(200, 80, 80),
-            FlatStyle = FlatStyle.Flat,
-            BackColor = Color.Transparent,
-            Size = new Size(40, 20),
-            Location = new Point(FW - 40, 44),
-            Cursor = Cursors.Hand,
-        };
-        _btnExit.FlatAppearance.BorderSize = 0;
-        _btnExit.Click += (_, _) => ExitRequested?.Invoke();
-
-        f.Controls.AddRange(new Control[] { _lblBeamStatus, _lblSlotInfo, _lblInvertYBadge, _lblHotkeyBadge, _lblAutoStart, _lblReset, _btnExit });
-
-        Controls.AddRange(new Control[] { _lblDeadzoneTitle, _deadzoneCtrl, _lblSensitivityTitle, _sensitivityCtrl, _lblSmoothingTitle, _smoothingCtrl, _lblCurveTitle, _lblCurveBadge, _curvePowerCtrl, f });
+        var reset = CreateButton("Reset settings", new Point(16, y), new Size(164, 32), Color.FromArgb(85, 65, 30));
+        var exit = CreateButton("Exit GazeStick", new Point(192, y), new Size(164, 32), Color.FromArgb(90, 40, 40));
+        reset.Click += (_, _) => ResetRequested?.Invoke();
+        exit.Click += (_, _) => ExitRequested?.Invoke();
+        Controls.AddRange(new Control[] { reset, exit });
 
         UpdateState();
     }
 
-    private static Label CreateLabel(string text, int y)
+    private void AddSectionLabel(string text, ref int y)
     {
-        return new Label
-        {
-            Text = text,
-            Font = new Font("Segoe UI", 8f, FontStyle.Bold),
-            ForeColor = Color.FromArgb(160, 160, 165),
-            Location = new Point(12, y),
-            AutoSize = true,
-        };
+        Controls.Add(new Label { Text = text.ToUpperInvariant(), Location = new Point(16, y), Size = new Size(340, 20), Font = new Font("Segoe UI", 8f, FontStyle.Bold), ForeColor = Color.FromArgb(120, 190, 145) });
+        y += 22;
     }
 
-    private static Label CreateBadge(string text, Color color, int x, int y)
+    private NumericAdjuster AddAdjuster(string label, string hint, double value, double min, double max, double step, int decimals, ref int y)
     {
-        return new Label
-        {
-            Text = text,
-            Font = new Font("Segoe UI", 8f, FontStyle.Bold),
-            ForeColor = color,
-            BackColor = Color.FromArgb(40, 40, 45),
-            AutoSize = true,
-            Padding = new Padding(6, 2, 6, 2),
-            Location = new Point(x, y),
-            TextAlign = ContentAlignment.MiddleCenter,
-            Cursor = Cursors.Hand,
-        };
+        var title = new Label { Text = label, Location = new Point(16, y), Size = new Size(340, 18), Font = new Font("Segoe UI", 9f, FontStyle.Bold), ForeColor = Color.FromArgb(220, 220, 225) };
+        var control = new NumericAdjuster { Location = new Point(16, y + 18), Width = 340, AccessibleName = label, AccessibleDescription = hint };
+        control.Initialize(value, min, max, step, decimals);
+        Controls.AddRange(new Control[] { title, control });
+        y += 62;
+        return control;
+    }
+
+    private static Button CreateButton(string text, Point location, Size size, Color color)
+    {
+        var button = new Button { Text = text, Location = location, Size = size, FlatStyle = FlatStyle.Flat, BackColor = color, ForeColor = Color.White, Font = new Font("Segoe UI", 9f, FontStyle.Bold), Cursor = Cursors.Hand, TabStop = true };
+        button.FlatAppearance.BorderColor = Color.FromArgb(95, 95, 100);
+        button.FlatAppearance.MouseOverBackColor = Color.FromArgb(Math.Min(color.R + 20, 255), Math.Min(color.G + 20, 255), Math.Min(color.B + 20, 255));
+        return button;
+    }
+
+    private void SelectOutput(OutputType outputType)
+    {
+        if (_outputType == outputType) return;
+        _outputType = outputType;
+        UpdateState();
+        OutputTypeChanged?.Invoke(outputType);
     }
 
     private void UpdateState()
     {
-        _lblStatus.Text = _isActive ? "●" : "○";
-        _lblStatus.ForeColor = _isActive ? Color.LimeGreen : Color.Gray;
-        _toggleBtn.IsOn = _isActive;
-        _deadzoneCtrl.SetEnabledState(_isActive);
-        _sensitivityCtrl.SetEnabledState(_isActive);
-        _smoothingCtrl.SetEnabledState(_isActive);
-        UpdateInvertYBadge();
-        UpdateCurvePowerVisibility();
+        _statusLabel.Text = _isActive ? "TRACKING ON" : "TRACKING OFF";
+        _statusLabel.ForeColor = _isActive ? Color.FromArgb(90, 220, 120) : Color.FromArgb(190, 190, 195);
+        _beamStatusLabel.Text = _isBeamConnected ? "Beam Eye Tracker: Connected" : "Beam Eye Tracker: Waiting for connection";
+        _beamStatusLabel.ForeColor = _isBeamConnected ? Color.FromArgb(160, 220, 175) : Color.FromArgb(235, 190, 100);
+        _toggleButton.Text = _isActive ? "Tracking: ON (click to turn off)" : "Tracking: OFF (click to turn on)";
+        _toggleButton.BackColor = _isActive ? Color.FromArgb(35, 100, 45) : Color.FromArgb(65, 65, 70);
+        _deadzoneControl.SetEnabledState(_isActive);
+        _sensitivityControl.SetEnabledState(_isActive);
+        _smoothingControl.SetEnabledState(_isActive);
+        _curveButton.Text = $"Curve: {_curve switch { CurveType.Exponential => "Exponential", CurveType.Logarithmic => "Logarithmic", _ => "Linear" }}";
+        _curvePowerControl.Visible = _curve != CurveType.Linear;
+        _invertYButton.Text = _invertY ? "Vertical camera: Inverted (click to restore)" : "Vertical camera: Normal (click to invert)";
+        _autoStartButton.Text = _autoStart ? "Start with Windows: On (click to disable)" : "Start with Windows: Off (click to enable)";
+        SetSelected(_xboxButton, _outputType == OutputType.Xbox360);
+        SetSelected(_ds4Button, _outputType == OutputType.DualShock4);
     }
 
-    private void UpdateBeamStatus()
+    private static void SetSelected(Button button, bool selected)
     {
-        _lblBeamStatus.Text = _isBeamConnected ? "● Beam Connected" : "○ Beam Disconnected";
-        _lblBeamStatus.ForeColor = _isBeamConnected ? Color.LimeGreen : Color.FromArgb(200, 150, 0);
-    }
-
-    private void UpdateInvertYBadge()
-    {
-        _lblInvertYBadge.Text = _invertY ? "Y: Inverted" : "Y: Normal";
-        _lblInvertYBadge.ForeColor = _invertY ? Color.FromArgb(100, 180, 255) : Color.FromArgb(140, 140, 145);
-    }
-
-    private void UpdateCurveBadge()
-    {
-        _lblCurveBadge.Text = _curve switch
-        {
-            CurveType.Exponential => "Exp",
-            CurveType.Logarithmic => "Log",
-            _ => "Linear",
-        };
-    }
-
-    private void UpdateCurvePowerVisibility()
-    {
-        _curvePowerCtrl.Visible = _curve != CurveType.Linear;
-    }
-
-    private void UpdateAutoStartBadge()
-    {
-        _lblAutoStart.Text = _autoStart ? "Auto ON" : "Auto OFF";
-        _lblAutoStart.ForeColor = _autoStart ? Color.FromArgb(100, 180, 100) : Color.FromArgb(140, 140, 145);
+        button.BackColor = selected ? Color.FromArgb(35, 100, 70) : Color.FromArgb(45, 45, 50);
+        button.FlatAppearance.BorderColor = selected ? Color.FromArgb(95, 210, 135) : Color.FromArgb(95, 95, 100);
     }
 
     private void CycleCurve()
     {
-        _curve = _curve switch
-        {
-            CurveType.Linear => CurveType.Exponential,
-            CurveType.Exponential => CurveType.Logarithmic,
-            CurveType.Logarithmic => CurveType.Linear,
-            _ => CurveType.Linear,
-        };
-        UpdateCurveBadge();
-        UpdateCurvePowerVisibility();
+        _curve = _curve switch { CurveType.Linear => CurveType.Exponential, CurveType.Exponential => CurveType.Logarithmic, _ => CurveType.Linear };
+        UpdateState();
         CurveTypeChanged?.Invoke(_curve);
     }
 
     private void StartHotkeyCapture()
     {
         _awaitingHotkey = true;
-        _lblHotkeyBadge.Text = "Press a key...";
-        _lblHotkeyBadge.ForeColor = Color.Yellow;
+        _hotkeyButton.Text = "Press a key...";
+        _hotkeyButton.Focus();
     }
 
     private void OnPanelKeyDown(object? sender, KeyEventArgs e)
@@ -380,15 +221,13 @@ public class PopupPanel : Form
         {
             e.Handled = true;
             e.SuppressKeyPress = true;
-            var keyStr = e.KeyCode.ToString();
-            if (e.Control) keyStr = "Ctrl+" + keyStr;
-            if (e.Shift) keyStr = "Shift+" + keyStr;
-            if (e.Alt) keyStr = "Alt+" + keyStr;
-
-            _lblHotkeyBadge.Text = keyStr;
-            _lblHotkeyBadge.ForeColor = Color.FromArgb(100, 120, 200);
+            var hotkey = e.KeyCode.ToString();
+            if (e.Control) hotkey = "Ctrl+" + hotkey;
+            if (e.Shift) hotkey = "Shift+" + hotkey;
+            if (e.Alt) hotkey = "Alt+" + hotkey;
+            _hotkeyButton.Text = hotkey;
             _awaitingHotkey = false;
-            HotkeyChanged?.Invoke(keyStr);
+            HotkeyChanged?.Invoke(hotkey);
         }
         else if (e.KeyCode == Keys.Escape)
         {
@@ -396,71 +235,9 @@ public class PopupPanel : Form
         }
     }
 
-    protected override void OnShown(EventArgs e)
+    private void CloseIfInactive()
     {
-        base.OnShown(e);
-        UpdateState();
-        UpdateBeamStatus();
-    }
-
-    protected override void WndProc(ref Message m)
-    {
-        const int WM_ACTIVATE = 0x0006;
-        if (m.Msg == WM_ACTIVATE && (int)m.WParam == 0) // WA_INACTIVE
-        {
+        if (!SuppressAutoClose && !IsDisposed && !ContainsFocus)
             Close();
-            return;
-        }
-        base.WndProc(ref m);
-    }
-
-    private class ToggleButton : Control
-    {
-        private bool _isOn;
-
-        public bool IsOn
-        {
-            get => _isOn;
-            set { _isOn = value; Invalidate(); }
-        }
-
-        public event Action<bool>? Toggled;
-
-        public ToggleButton()
-        {
-            DoubleBuffered = true;
-            Cursor = Cursors.Hand;
-            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.StandardClick, true);
-        }
-
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            var g = e.Graphics;
-            var rect = new Rectangle(0, 0, Width - 1, Height - 1);
-
-            using var bgBrush = new SolidBrush(_isOn ? Color.FromArgb(30, 60, 30) : Color.FromArgb(45, 45, 48));
-            using var borderPen = new Pen(_isOn ? Color.FromArgb(50, 180, 50) : Color.FromArgb(80, 80, 80), 2);
-            using var textBrush = new SolidBrush(_isOn ? Color.FromArgb(50, 220, 50) : Color.FromArgb(140, 140, 145));
-            using var textFont = new Font("Segoe UI", 9f, FontStyle.Bold);
-
-            g.FillRectangle(bgBrush, rect);
-            g.DrawRectangle(borderPen, rect);
-
-            var text = _isOn ? "ON  ●" : "OFF  ○";
-            var textSize = g.MeasureString(text, textFont);
-            g.DrawString(text, textFont, textBrush,
-                (Width - textSize.Width) / 2, (Height - textSize.Height) / 2);
-        }
-
-        protected override void OnMouseClick(MouseEventArgs e)
-        {
-            base.OnMouseClick(e);
-            _isOn = !_isOn;
-            Invalidate();
-            Toggled?.Invoke(_isOn);
-        }
-
-        protected override void OnMouseEnter(EventArgs e) { Invalidate(); base.OnMouseEnter(e); }
-        protected override void OnMouseLeave(EventArgs e) { Invalidate(); base.OnMouseLeave(e); }
     }
 }

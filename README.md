@@ -2,154 +2,81 @@
 
 Turn your webcam into a virtual gamepad right stick using eye tracking.
 
-GazeStick captures gaze data from the [Beam Eye Tracker](https://beam.eyeware.tech/) SDK and maps it to the right thumbstick (RX/RY) of a virtual Xbox 360 controller via [ViGEmBus](https://vigem.org/). No dedicated eye tracking hardware required — just a webcam.
+GazeStick receives local gaze data from the [Beam Eye Tracker](https://beam.eyeware.tech/) SDK and maps it to the right thumbstick of a virtual Xbox 360 or DualShock 4 controller through [ViGEmBus](https://vigem.org/). No dedicated eye-tracking hardware is required—just a webcam.
 
 ## Prerequisites
 
-- **Windows 10 or 11** (x64)
-- **ViGEmBus driver** — [Download](https://github.com/nefarius/ViGEmBus/releases/latest)
-- **Beam Eye Tracker app** — [Download](https://beam.eyeware.tech/) (free tier works)
-- **Beam SDK native DLL** (`beam_eye_tracker_client.dll`) — downloaded automatically by `scripts/fetch-sdk.ps1`
+- Windows 10 or 11 (x64)
+- [ViGEmBus](https://github.com/nefarius/ViGEmBus/releases/latest)
+- The official [Beam Eye Tracker app](https://beam.eyeware.tech/) installed, running, and activated with a valid subscription/license
+- `beam_eye_tracker_client.dll` beside the executable; the build and release pipeline copy this DLL automatically
 
-## Setup
+## Output modes
 
-1. Install [ViGEmBus](https://github.com/nefarius/ViGEmBus/releases/latest) and restart if prompted
-2. Install and run the [Beam Eye Tracker](https://beam.eyeware.tech/) app, sign in, and activate **Gaming Extensions**
-3. Run `scripts/fetch-sdk.ps1` to download the Beam SDK DLL (or place it manually in `lib/`)
-4. Build GazeStick (see below) or download a release
+| Mode | Default | Notes |
+|---|---:|---|
+| Xbox 360 | Yes | Broad game compatibility; consumes one of Windows' four XInput controller slots. |
+| DualShock 4 | No | Does not consume an XInput slot; game or mapping-layer support for DS4 input may be required. |
 
-### Beam SDK
+Change the output mode from the tray popup. GazeStick immediately disconnects the old virtual controller, then connects the selected one in a neutral state.
 
-This project uses **Beam SDK 2.1.0** (raw tracking signal mode). The required native DLL (`beam_eye_tracker_client.dll`) is downloaded automatically from the official source by running:
+## Setup and usage
 
-```powershell
-scripts/fetch-sdk.ps1
-```
-
-The DLL is placed in `lib/` and auto-copied to the build output. The SDK itself is not redistributed as a standalone package in this repository.
-
-### SDK DLL placement (manual alternative)
-
-Place `beam_eye_tracker_client.dll` in one of these locations:
-- `lib/beam_eye_tracker_client.dll` (project root, auto-copied on build)
-- Same directory as `GazeStick.exe`
-
-## Build
-
-```powershell
-# 1. Fetch the Beam SDK DLL (required once)
-scripts/fetch-sdk.ps1
-
-# 2. Build the portable version (framework-dependent)
-dotnet publish -c Release -r win-x64 --self-contained false
-```
-
-Output: `bin/Release/net8.0-windows/win-x64/GazeStick.exe`
-
-### Package for distribution
-
-```powershell
-# Portable zip
-package.ps1
-
-# Installer (requires Inno Setup)
-scripts/build-installer.ps1
-```
-
-## Usage
-
-1. Launch **GazeStick** (appears in system tray)
-2. Make sure **Beam Eye Tracker** is running and tracking
-3. Look at the center of your screen to keep the stick neutral
-4. Look toward edges to move the stick
+1. Install ViGEmBus and restart if prompted.
+2. Install, sign in to, and run Beam Eye Tracker. Activate Gaming Extensions.
+3. Run GazeStick from the system tray.
+4. Look at the screen center to keep the right stick neutral; look toward an edge to move it.
 
 | Action | Input |
-|--------|-------|
-| Toggle ON/OFF | Left-click tray icon, or press `F9` |
-| Open settings | Right-click tray icon |
-| Adjust deadzone/sensitivity/smoothing | Drag value or press +/- in the popup panel |
-| Toggle Y-invert | Click the Y badge in the popup panel |
-| Change toggle hotkey | Click the hotkey badge, then press new key |
-| Quit | Click "Exit" in the popup panel |
+|---|---|
+| Toggle tracking | Tray icon or `F9` |
+| Open settings | Click the tray icon |
+| Change output mode | Select Xbox 360 or DualShock 4 in the popup |
+| Adjust tracking | Use the Deadzone, Sensitivity, Smoothing, and Curve controls |
+| Close settings | Press `Esc` or click anywhere outside the popup |
 
 ## Configuration
 
 Settings are saved to `%AppData%\GazeStick\settings.json`.
 
 | Key | Default | Description |
-|-----|---------|-------------|
-| `deadzone` | 0.10 | Circular deadzone radius (0.00–0.50) |
-| `sensitivity` | 1.0 | Stick output multiplier (0.1–5.0) |
-| `smoothing` | 0.30 | EMA smoothing factor (0.0–0.9) |
-| `invertY` | false | Invert Y-axis output |
-| `toggleHotkey` | "F9" | Global toggle hotkey |
-| `padSlot` | auto | Virtual pad slot number (auto-assigned) |
-| `startWithWindows` | true | Auto-start with Windows |
-| `startActive` | true | Start with tracking active |
+|---|---:|---|
+| `deadzone` | 0.10 | Circular neutral radius (0.00–0.50). |
+| `sensitivity` | 2.0 | Stick output multiplier (0.1–5.0). |
+| `smoothing` | 0.30 | EMA smoothing factor (0.0–0.9). |
+| `outputType` | `Xbox360` | Virtual-controller output mode. |
+| `invertY` | false | Invert vertical camera output. |
+| `toggleHotkey` | `F9` | Global tracking-toggle hotkey. |
 
-## How it works
+## Designed for combination
 
+GazeStick intentionally provides only right-stick output. Pair it with your preferred controller-mapping or device-combination software when your setup needs to combine gaze, physical controllers, keyboard, mouse, or other inputs. Compatibility depends on the selected mapping software, virtual-controller mode, and game.
+
+## Build
+
+```powershell
+scripts/fetch-sdk.ps1
+dotnet publish -c Release -r win-x64 --self-contained false
 ```
-[Beam Eye Tracker App] → (local socket) → [GazeStick]
-                                               ├─ TrackingService  — polls Beam SDK at ~60fps
-                                               ├─ StickMapper      — deadzone → sensitivity → smoothing → output
-                                               ├─ VirtualPad       — ViGEm Xbox 360 controller (right stick)
-                                               └─ TrayApp          — system tray icon + popup settings panel
-```
 
-## Architecture
+The Beam DLL is copied from `lib/beam_eye_tracker_client.dll` to the executable output directory. Use `package.ps1` for a portable package or `scripts/build-installer.ps1` for an installer.
 
-- **Language:** C# (.NET 8, WinForms)
-- **Eye tracking:** [Beam Eye Tracker SDK](https://docs.beam.eyeware.tech/) (native DLL, P/Invoke)
-- **Virtual controller:** [ViGEmBus](https://github.com/nefarius/ViGEmBus) via [Nefarius.ViGEm.Client](https://www.nuget.org/packages/Nefarius.ViGEm.Client)
-- **UI:** System tray with popup settings panel (no main window)
+## Privacy and safety
 
-## Designed for Combination
+Gaze data is processed locally for controller mapping. GazeStick does not log, record, or transmit gaze data to an unauthorized remote service.
 
-GazeStick provides only the right stick output. On its own this is limited, but as an accessibility tool it is designed to be paired with other input devices and controller remapping software.
-
-Applications like [reWASD](https://www.rewasd.com/) can merge multiple virtual and physical controllers into one unified controller, allowing you to combine GazeStick's right stick output with a physical controller's left stick, keyboard, mouse, or other inputs. This is the standard pattern: each tool handles one aspect of input, and a remapping layer ties them together.
-
-## Third-Party Licenses
-
-This application uses the Beam Eye Tracker SDK, which includes third-party components with the following licenses:
-
-- [ZeroMQ (libzmq)](https://github.com/zeromq/libzmq) — Mozilla Public License 2.0
-- [libsodium](https://github.com/jedisct1/libsodium) — ISC License
-- [Protocol Buffers](https://github.com/protocolbuffers/protobuf) — BSD 3-Clause License
-- [Eigen](https://gitlab.com/libeigen/eigen) — Mozilla Public License 2.0
-- [cppzmq](https://github.com/zeromq/cppzmq) — MIT License
-- [utfcpp](https://github.com/nemtrif/utfcpp) — Boost Software License 1.0
-- [pybind11](https://github.com/pybind/pybind11) — BSD 3-Clause License
-
-See [`beam-sdk/THIRD_PARTY_LICENSES.md`](beam-sdk/THIRD_PARTY_LICENSES.md) for the full license texts.
-
-## Disclaimers
-
-**Non-Medical Device:** This software and the underlying Beam Eye Tracker SDK are not medical devices. They are not intended, nor should they be used, to replace professional medical advice, diagnosis, or treatment.
+**Non-Medical Device Disclaimer:** This software and the underlying Beam Eye Tracker SDK are not medical devices. They are not intended, nor should they be used, to replace professional medical advice, diagnosis, or treatment.
 
 **High-Risk Use Prohibition:** This software must not be used in high-risk environments or safety-critical applications where any software malfunction or interruption could lead to personal injury, loss of life, or physical/environmental damage.
 
-**Data Privacy:** Eye-tracking / gaze data is processed entirely locally on your machine and is used only for controller mapping. No gaze data is logged, recorded, or transmitted to any remote server without your explicit consent.
-
-## Demo
-
-See GazeStick in action playing an open-world third-person game:
-
-[![GazeStick Demo](https://img.youtube.com/vi/ZjwA1SRjoVQ/0.jpg)](https://youtu.be/ZjwA1SRjoVQ)
-
-*[Watch on YouTube](https://youtu.be/ZjwA1SRjoVQ) — Playing open-world games using Beam Eye Tracker and GazeStick*
-
----
-
 ## Changelog
 
-### v1.1.0 (unreleased)
+### v1.2.0
 
-- **Gaze→stick mapping changed** from axis-independent clamping to circular (magnitude) normalization.
-- Diagonal maximum sensitivity reduced by ~29% (1/√2). Users who tuned reWASD curves or sensitivity for diagonal responsiveness may need readjustment.
-
----
+- Added immediate Xbox 360 / DualShock 4 output selection.
+- Changed the default sensitivity to 2.0.
+- Redesigned the tray popup for visibility, readability, and outside-click dismissal.
+- Updated combination-tool guidance to be vendor neutral.
 
 ## License
 

@@ -49,7 +49,6 @@ public sealed class TrayApplicationContext : ApplicationContext
         _tracker.ErrorOccurred += OnError;
 
         _pad.ErrorOccurred += OnError;
-        _pad.SlotChanged += OnSlotChanged;
 
         _hotkeyWindow.HotkeyPressed += ToggleActive;
 
@@ -78,7 +77,7 @@ public sealed class TrayApplicationContext : ApplicationContext
 
     private void InitializeServices()
     {
-        if (!_pad.Initialize(_settings.PadSlot))
+        if (!_pad.Initialize(_settings.OutputType))
         {
             _trayIcon.Text = "GazeStick — ViGEm Error";
             var result = MessageBox.Show(
@@ -90,12 +89,6 @@ public sealed class TrayApplicationContext : ApplicationContext
             if (result == DialogResult.Yes)
                 Process.Start(new ProcessStartInfo("https://github.com/nefarius/ViGEmBus/releases/latest") { UseShellExecute = true });
             return;
-        }
-
-        if (_settings.PadSlot != _pad.CurrentSlot)
-        {
-            _settings.PadSlot = _pad.CurrentSlot;
-            SettingsManager.Save(_settings);
         }
 
         _reconnectAttempts = 0;
@@ -178,14 +171,6 @@ public sealed class TrayApplicationContext : ApplicationContext
         catch { }
     }
 
-    private void OnSlotChanged(int slot)
-    {
-        _settings.PadSlot = slot;
-        SettingsManager.Save(_settings);
-        if (_popup != null && !_popup.IsDisposed)
-            _popup.PadSlot = slot;
-    }
-
     private void ToggleActive()
     {
         _isActive = !_isActive;
@@ -259,12 +244,12 @@ public sealed class TrayApplicationContext : ApplicationContext
         {
             IsActive = _isActive,
             IsBeamConnected = _tracker.IsConnected,
-            PadSlot = _pad.CurrentSlot,
             HotkeyText = _settings.ToggleHotkey,
             InvertY = _settings.InvertY,
             Curve = _settings.Curve,
             CurvePower = _settings.CurvePower,
             AutoStart = _settings.StartWithWindows,
+            OutputType = _settings.OutputType,
             DeadzoneValue = _settings.Deadzone,
             SensitivityValue = _settings.Sensitivity,
             SmoothingValue = _settings.Smoothing,
@@ -278,9 +263,29 @@ public sealed class TrayApplicationContext : ApplicationContext
         _popup.CurvePowerChanged += v => { _settings.CurvePower = v; SettingsManager.Save(_settings); };
         _popup.AutoStartChanged += v =>
         {
-            _settings.StartWithWindows = v;
-            SettingsManager.Save(_settings);
-            AutoStartManager.SetEnabled(v);
+            if (AutoStartManager.SetEnabled(v))
+            {
+                _settings.StartWithWindows = v;
+                SettingsManager.Save(_settings);
+                _popup.ShowSettingsNotice(v ? "Start with Windows enabled." : "Start with Windows disabled.");
+            }
+            else
+            {
+                _popup.AutoStart = _settings.StartWithWindows;
+                OnError("Could not update the Windows startup setting.");
+            }
+        };
+        _popup.OutputTypeChanged += outputType =>
+        {
+            if (_pad.SetOutputType(outputType))
+            {
+                _settings.OutputType = outputType;
+                SettingsManager.Save(_settings);
+            }
+            else
+            {
+                _popup.OutputType = _settings.OutputType;
+            }
         };
         _popup.ResetRequested += ResetSettings;
         _popup.ToggleChanged += v => { _isActive = v; UpdateTrayText(); if (!v) _pad.Reset(); };
@@ -293,11 +298,6 @@ public sealed class TrayApplicationContext : ApplicationContext
             if (!string.IsNullOrEmpty(key))
                 _hotkey?.Register(key, ToggleActive);
         };
-        _popup.SlotChangeRequested += () =>
-        {
-            int next = _pad.CurrentSlot % 4 + 1;
-            _pad.SetSlot(next);
-        };
 
         var cursorPos = Cursor.Position;
         var screen = Screen.FromPoint(cursorPos).WorkingArea;
@@ -307,20 +307,28 @@ public sealed class TrayApplicationContext : ApplicationContext
         y = Math.Max(y, screen.Top);
         _popup.Location = new Point(x, y);
 
+        _popup.TopMost = true;
         _popup.Show();
+        _popup.BringToFront();
+        _popup.Activate();
     }
 
     private void ResetSettings()
     {
+        if (_popup != null && !_popup.IsDisposed)
+            _popup.SuppressAutoClose = true;
+
         var result = MessageBox.Show(
             "Reset all settings to defaults?",
             "GazeStick — Reset Settings",
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Question);
+        if (_popup != null && !_popup.IsDisposed)
+            _popup.SuppressAutoClose = false;
         if (result != DialogResult.Yes) return;
 
         _settings.Deadzone = 0.10;
-        _settings.Sensitivity = 1.0;
+        _settings.Sensitivity = 2.0;
         _settings.Smoothing = 0.30;
         _settings.InvertY = false;
         _settings.ToggleHotkey = "F9";
@@ -328,12 +336,39 @@ public sealed class TrayApplicationContext : ApplicationContext
         _settings.CurvePower = 2.0;
         _settings.StartActive = true;
         _settings.StartWithWindows = false;
+        if (!_pad.SetOutputType(OutputType.Xbox360))
+        {
+            OnError("Could not restore the default Xbox 360 output mode.");
+            return;
+        }
+
+        _settings.OutputType = OutputType.Xbox360;
+        if (!AutoStartManager.SetEnabled(false))
+            OnError("Could not disable the Windows startup setting.");
         SettingsManager.Save(_settings);
 
         _hotkey?.Unregister();
         _hotkey?.Register("F9", ToggleActive);
 
-        _popup?.Close();
+        _mapper.Reset();
+        _isActive = true;
+        _trayIcon.Icon = _appIcon;
+        UpdateTrayText();
+
+        if (_popup != null && !_popup.IsDisposed)
+        {
+            _popup.IsActive = true;
+            _popup.DeadzoneValue = _settings.Deadzone;
+            _popup.SensitivityValue = _settings.Sensitivity;
+            _popup.SmoothingValue = _settings.Smoothing;
+            _popup.InvertY = _settings.InvertY;
+            _popup.Curve = _settings.Curve;
+            _popup.CurvePower = _settings.CurvePower;
+            _popup.AutoStart = _settings.StartWithWindows;
+            _popup.OutputType = _settings.OutputType;
+            _popup.HotkeyText = _settings.ToggleHotkey;
+            _popup.ShowSettingsNotice("All settings restored to defaults.");
+        }
     }
 
     private void StartReconnectTimer()
