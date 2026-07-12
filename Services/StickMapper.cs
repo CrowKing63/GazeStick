@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using GazeStick.Models;
 
 namespace GazeStick.Services;
@@ -5,9 +6,11 @@ namespace GazeStick.Services;
 public sealed class StickMapper
 {
     private readonly object _lock = new();
+    private readonly CornerAttenuation _corner = new();
     private double _prevX = 0.0;
     private double _prevY = 0.0;
     private bool _hasPrev = false;
+    private long _lastTick;
 
     public StickOutput Map(GazePoint gaze, AppSettings settings)
     {
@@ -16,6 +19,14 @@ public sealed class StickMapper
 
         double dx = gaze.X - 0.5;
         double dy = gaze.Y - 0.5;
+
+        // Ellipse-through-cardinal-points geometry: u = dx / halfWidth, v = dy / halfHeight
+        // with halfWidth = halfHeight = 0.5 in normalized screen space.
+        double u = 2.0 * dx;
+        double v = 2.0 * dy;
+
+        double dt = ComputeDeltaMs();
+        double gain = _corner.Compute(u, v, dt);
 
         double distance = Math.Sqrt(dx * dx + dy * dy);
         double deadzone = Math.Clamp(settings.Deadzone, 0.0, 0.5);
@@ -63,6 +74,11 @@ public sealed class StickMapper
             _hasPrev = true;
         }
 
+        // Corner attenuation is a separate layer applied after the existing
+        // stick-vector smoothing, so the two stages never double-delay.
+        nx *= gain;
+        ny *= gain;
+
         if (settings.InvertY)
             ny = -ny;
 
@@ -95,5 +111,20 @@ public sealed class StickMapper
             _prevY = 0.0;
             _hasPrev = false;
         }
+        _corner.Reset();
+        _lastTick = 0;
+    }
+
+    private double ComputeDeltaMs()
+    {
+        long now = Stopwatch.GetTimestamp();
+        if (_lastTick == 0)
+        {
+            _lastTick = now;
+            return 0.0;
+        }
+        double dt = Stopwatch.GetElapsedTime(_lastTick).TotalMilliseconds;
+        _lastTick = now;
+        return dt;
     }
 }
