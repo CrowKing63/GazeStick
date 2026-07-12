@@ -1,5 +1,17 @@
 # GazeStick
 
+<p align="center">
+  <img src="docs/assets/icon.png" alt="GazeStick app icon" width="96" height="96" />
+</p>
+
+<p align="center">
+  <strong>Turn your webcam into a virtual gamepad right stick using eye tracking.</strong>
+</p>
+
+<p align="center">
+  <img src="docs/assets/main.png" alt="GazeStick settings popup" width="280" />
+</p>
+
 Turn your webcam into a virtual gamepad right stick using eye tracking.
 
 GazeStick receives local gaze data from the [Beam Eye Tracker](https://beam.eyeware.tech/) SDK and maps it to the right thumbstick of a virtual Xbox 360 or DualShock 4 controller through [ViGEmBus](https://vigem.org/). No dedicated eye-tracking hardware is required—just a webcam.

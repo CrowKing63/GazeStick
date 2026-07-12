@@ -40,12 +40,7 @@ body {
 
 /* Hero */
 .hero {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  padding: 64px 24px 40px;
+  padding: 56px 24px 40px;
   position: relative;
   overflow: hidden;
 }
@@ -61,17 +56,86 @@ body {
   pointer-events: none;
 }
 
-.hero-icon {
-  width: 96px;
-  height: 96px;
-  margin-bottom: 32px;
-  animation: float 3s ease-in-out infinite;
+/* Navbar */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(13, 17, 23, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
 }
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.nav-brand .nav-icon { border-radius: 6px; }
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.nav-links a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.92rem;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover { color: var(--text); }
+
+.nav-cta {
+  border: 1px solid var(--border);
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+}
+
+.nav-cta:hover { border-color: var(--green); color: var(--green) !important; }
+
+@media (max-width: 640px) {
+  .nav-links a:not(.nav-cta) { display: none; }
+}
+
+/* Hero layout */
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 48px;
+  align-items: center;
+}
+
+.hero-text { text-align: left; }
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 8px;
+  background: rgba(63, 185, 80, 0.1);
+  border: 1px solid rgba(63, 185, 80, 0.3);
+  border-radius: 20px;
+  font-size: 0.82rem;
+  color: var(--green);
+  margin-bottom: 20px;
+}
+
+.hero-badge-icon { border-radius: 4px; }
 
 .hero h1 {
   font-size: clamp(2.5rem, 6vw, 4rem);
@@ -85,10 +149,10 @@ body {
 }
 
 .hero p {
-  font-size: clamp(1rem, 2vw, 1.25rem);
+  font-size: clamp(1rem, 2vw, 1.2rem);
   color: var(--text-muted);
-  max-width: 640px;
-  margin-bottom: 40px;
+  max-width: 560px;
+  margin-bottom: 28px;
   line-height: 1.7;
 }
 
@@ -96,7 +160,125 @@ body {
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.hero-note {
+  margin-top: 20px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  max-width: 560px;
+}
+
+.hero-points {
+  list-style: none;
+  margin-top: 24px;
+  display: grid;
+  gap: 10px;
+  max-width: 520px;
+}
+
+.hero-points li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.hero-points li::before {
+  content: '\2713';
+  color: var(--green);
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.hero-visual {
+  display: flex;
   justify-content: center;
+}
+
+.device {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(63, 185, 80, 0.15);
+  width: 100%;
+  max-width: 320px;
+}
+
+.device-img {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  display: block;
+}
+
+/* Glance strip */
+.glance {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 32px 0;
+}
+
+.glance-item { text-align: center; }
+
+.glance-item .n {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--green);
+}
+
+.glance-item .l {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* Screenshots gallery */
+.shots {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: center;
+}
+
+.shot {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  text-align: center;
+}
+
+.shot img {
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+  display: block;
+}
+
+.shot .cap {
+  margin-top: 12px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+@media (max-width: 860px) {
+  .hero-grid { grid-template-columns: 1fr; gap: 36px; }
+  .hero-text { text-align: center; }
+  .hero p { margin-left: auto; margin-right: auto; }
+  .hero-actions { justify-content: center; }
+  .hero-badge { margin-left: auto; margin-right: auto; }
+  .hero-points { margin-left: auto; margin-right: auto; text-align: left; }
+  .glance { grid-template-columns: 1fr; gap: 24px; }
+  .shots { grid-template-columns: 1fr; }
 }
 
 .btn {
@@ -221,7 +403,7 @@ body {
 
 /* Section */
 .section {
-  padding: 100px 0;
+  padding: 72px 0;
   scroll-margin-top: 40px;
 }
 
@@ -446,108 +628,155 @@ body {
   font-size: 0.9rem;
 }
 
-/* Settings Panel Mockup */
+/* Settings Panel Mockup — mirrors the actual GazeStick popup */
 .settings-mockup {
-  max-width: 400px;
+  max-width: 360px;
   margin: 0 auto;
-  background: var(--surface);
+  background: #1c1c1e;
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 24px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  padding: 14px 16px 18px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-family: -apple-system, "Segoe UI", Noto Sans, sans-serif;
+  font-size: 13px;
 }
 
-.mock-header {
+.mock-titlebar {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 20px;
+  align-items: baseline;
+  margin-bottom: 6px;
 }
 
-.mock-header .app-name {
+.mock-titlebar .app-name {
+  font-size: 17px;
   font-weight: 700;
-  font-size: 1rem;
 }
 
-.mock-header .status-badge {
-  font-size: 0.75rem;
-  padding: 4px 14px;
-  border-radius: 20px;
-  border: 1px solid var(--green);
-  color: var(--green);
-  font-weight: 600;
-  background: rgba(63, 185, 80, 0.08);
+.mock-titlebar .status {
+  font-size: 11px;
+  font-weight: 700;
+  color: #5adc78;
 }
 
-.mock-param {
-  margin-bottom: 16px;
+.mock-beam {
+  font-size: 11px;
+  color: #a0dcaf;
+  margin-bottom: 12px;
 }
+
+.mock-beam.waiting { color: #ebee64; }
+
+.mock-toggle {
+  display: block;
+  width: 100%;
+  text-align: center;
+  background: #23692d;
+  color: #fff;
+  border: 1px solid #2f7a3a;
+  border-radius: 6px;
+  padding: 11px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+.mock-toggle.off {
+  background: #414146;
+  border-color: #5f5f64;
+}
+
+.mock-section {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #78be91;
+  margin: 14px 0 8px;
+}
+
+.mock-param { margin-bottom: 12px; }
 
 .mock-param .row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 5px;
 }
 
 .mock-param .label {
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 700;
+  color: #dcdce1;
 }
 
 .mock-param .value {
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   font-family: "SF Mono", "Cascadia Code", "Fira Code", monospace;
-  color: var(--green);
+  color: #5adc78;
 }
 
 .mock-slider {
   height: 6px;
-  background: var(--bg);
+  background: #0d1117;
   border-radius: 3px;
   position: relative;
 }
 
 .mock-slider .fill {
   height: 100%;
-  background: var(--green);
+  background: #3fb950;
   border-radius: 3px;
   position: absolute;
   left: 0;
   top: 0;
 }
 
-.mock-footer {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
+.mock-btn {
+  display: block;
+  width: 100%;
+  text-align: center;
+  background: #2d2d32;
+  color: #fff;
+  border: 1px solid #5f5f64;
+  border-radius: 6px;
+  padding: 9px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.mock-btn.alt {
+  background: #23694a;
+  border-color: #5fd287;
+}
+
+.mock-btn-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  gap: 8px;
 }
 
-.mock-footer .hotkey {
-  font-size: 0.8rem;
-  color: var(--text-muted);
+.mock-btn.small { flex: 1; }
+
+.mock-hint {
+  font-size: 10px;
+  color: #b4b4b9;
+  margin: 6px 0 10px;
 }
 
-.mock-footer .hotkey kbd {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  padding: 2px 10px;
-  border-radius: 4px;
-  font-family: inherit;
-  font-size: 0.8rem;
-  margin-left: 6px;
+.mock-footer-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 14px;
 }
 
-.mock-footer .exit {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
+.mock-footer-row .mock-btn { margin-bottom: 0; }
+
+.mock-btn.reset { background: #553f1e; border-color: #6a5126; }
+.mock-btn.exit { background: #5a2828; border-color: #6e3434; }
 
 /* Architecture */
 .architecture {
@@ -715,58 +944,74 @@ body {
 </head>
 <body>
 
-<!-- Hero -->
-<section class="hero">
-  <svg class="hero-icon" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="eye-grad" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#3fb950"/>
-        <stop offset="100%" stop-color="#2ea043"/>
-      </linearGradient>
-    </defs>
-    <ellipse cx="48" cy="48" rx="40" ry="28" stroke="url(#eye-grad)" stroke-width="3" fill="none"/>
-    <ellipse cx="48" cy="48" rx="18" ry="14" fill="url(#eye-grad)"/>
-    <circle cx="48" cy="48" r="5" fill="#0d1117"/>
-    <path d="M8 48 Q28 20 48 48 Q68 76 88 48" stroke="url(#eye-grad)" stroke-width="2" fill="none" opacity="0.3"/>
-    <!-- Crosshair overlay -->
-    <line x1="30" y1="48" x2="66" y2="48" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
-    <line x1="48" y1="34" x2="48" y2="62" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
-    <!-- Small dots at edges -->
-    <circle cx="28" cy="48" r="1.5" fill="#3fb950" opacity="0.6"/>
-    <circle cx="68" cy="48" r="1.5" fill="#3fb950" opacity="0.6"/>
-    <circle cx="48" cy="32" r="1.5" fill="#3fb950" opacity="0.6"/>
-    <circle cx="48" cy="64" r="1.5" fill="#3fb950" opacity="0.6"/>
-  </svg>
-
-  <h1>GazeStick</h1>
-  <p>Turn your webcam into a virtual gamepad right stick using eye tracking. No dedicated eye tracking hardware required — just a webcam and the Beam Eye Tracker app.</p>
-  <div class="hero-actions">
-    <a href="https://github.com/CrowKing63/GazeStick/releases/latest" class="btn btn-primary">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Download
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="container nav-inner">
+    <a href="#top" class="nav-brand">
+      <img src="assets/icon.png" alt="GazeStick icon" class="nav-icon" width="32" height="32" />
+      <span>GazeStick</span>
     </a>
-    <a href="https://github.com/CrowKing63/GazeStick" class="btn btn-secondary">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
-      View on GitHub
-    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how-it-works">How it works</a>
+      <a href="#downloads">Download</a>
+      <a href="https://github.com/CrowKing63/GazeStick" class="nav-cta">GitHub</a>
+    </div>
   </div>
-  <p style="margin-top: 24px; font-size: 0.85rem; color: var(--text-muted);">
-    Two download options: <strong style="color: var(--text);">Portable</strong> (self-contained .zip, no installer) or <strong style="color: var(--text);">Installer</strong> (.exe, auto-installs ViGEmBus).
-  </p>
+</nav>
 
-  <div class="hero-video-row">
-    <a href="#demo" class="hero-video-card">
-      <img src="https://img.youtube.com/vi/ZjwA1SRjoVQ/hqdefault.jpg" alt="Spider-Man demo" loading="lazy" />
-      <span class="play-icon">&#9654;</span>
-      <span class="hero-video-label">Spider-Man</span>
-    </a>
-    <a href="#demo" class="hero-video-card">
-      <img src="https://img.youtube.com/vi/5eiwslQ4hgk/hqdefault.jpg" alt="Borderlands 3 demo" loading="lazy" />
-      <span class="play-icon">&#9654;</span>
-      <span class="hero-video-label">Borderlands 3</span>
-    </a>
+<!-- Hero -->
+<section class="hero" id="top">
+  <div class="container hero-grid">
+    <div class="hero-text">
+      <div class="hero-badge">
+        <img src="assets/icon.png" alt="" class="hero-badge-icon" width="20" height="20" />
+        <span>Webcam eye tracking &rarr; virtual gamepad</span>
+      </div>
+      <h1>GazeStick</h1>
+      <p>Turn your webcam into a virtual gamepad right stick using eye tracking. No dedicated eye tracking hardware required &mdash; just a webcam and the Beam Eye Tracker app.</p>
+      <div class="hero-actions">
+        <a href="https://github.com/CrowKing63/GazeStick/releases/latest" class="btn btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
+        </a>
+        <a href="https://github.com/CrowKing63/GazeStick" class="btn btn-secondary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+          View on GitHub
+        </a>
+      </div>
+      <p class="hero-note">Two options: <strong style="color: var(--text);">Portable</strong> (.zip, no installer) or <strong style="color: var(--text);">Installer</strong> (.exe, auto-installs ViGEmBus).</p>
+      <ul class="hero-points">
+        <li>Runs quietly in the system tray &mdash; click or press <strong style="color: var(--text);">F9</strong> to toggle.</li>
+        <li>Adjustable deadzone, sensitivity, smoothing and Y-invert in real time.</li>
+        <li>Outputs to a virtual Xbox 360 or DualShock 4 controller via ViGEmBus.</li>
+      </ul>
+    </div>
+    <div class="hero-visual">
+      <div class="device">
+        <img src="assets/main.png" alt="GazeStick settings popup" class="device-img" loading="lazy" />
+      </div>
+    </div>
   </div>
 </section>
+
+<!-- Glance -->
+<div class="container">
+  <div class="glance">
+    <div class="glance-item">
+      <div class="n">0&nbsp;hardware</div>
+      <div class="l">Just a webcam &mdash; no Tobii needed</div>
+    </div>
+    <div class="glance-item">
+      <div class="n">2&nbsp;modes</div>
+      <div class="l">Xbox 360 &amp; DualShock 4 output</div>
+    </div>
+    <div class="glance-item">
+      <div class="n">F9</div>
+      <div class="l">Global toggle, anywhere</div>
+    </div>
+  </div>
+</div>
 
 <!-- Demo Video -->
 <section class="section" id="demo" style="background: linear-gradient(180deg, rgba(63, 185, 80, 0.03) 0%, transparent 100%);">
@@ -1012,38 +1257,50 @@ body {
     </div>
 
     <div class="settings-mockup">
-      <div class="mock-header">
+      <div class="mock-titlebar">
         <span class="app-name">GazeStick</span>
-        <span class="status-badge">● ON</span>
+        <span class="status">TRACKING ON</span>
       </div>
+      <div class="mock-beam">Beam Eye Tracker: Connected</div>
 
+      <div class="mock-toggle">Tracking: ON (click to turn off)</div>
+
+      <div class="mock-section">Tracking</div>
       <div class="mock-param">
-        <div class="row">
-          <span class="label">Deadzone</span>
-          <span class="value">0.10</span>
-        </div>
+        <div class="row"><span class="label">Deadzone</span><span class="value">0.10</span></div>
         <div class="mock-slider"><div class="fill" style="width:20%"></div></div>
       </div>
-
       <div class="mock-param">
-        <div class="row">
-          <span class="label">Sensitivity</span>
-          <span class="value">2.0</span>
-        </div>
+        <div class="row"><span class="label">Sensitivity</span><span class="value">2.0</span></div>
         <div class="mock-slider"><div class="fill" style="width:50%"></div></div>
       </div>
-
       <div class="mock-param">
-        <div class="row">
-          <span class="label">Smoothing</span>
-          <span class="value">0.30</span>
-        </div>
+        <div class="row"><span class="label">Smoothing</span><span class="value">0.30</span></div>
         <div class="mock-slider"><div class="fill" style="width:33%"></div></div>
       </div>
 
-      <div class="mock-footer">
-        <span class="hotkey">Hotkey <kbd>F9</kbd></span>
-        <span class="exit">Exit</span>
+      <div class="mock-section">Response curve</div>
+      <div class="mock-btn">Curve: Linear</div>
+      <div class="mock-param">
+        <div class="row"><span class="label">Curve power</span><span class="value">2.0</span></div>
+        <div class="mock-slider"><div class="fill" style="width:42%"></div></div>
+      </div>
+
+      <div class="mock-section">Virtual controller output</div>
+      <div class="mock-btn-row">
+        <span class="mock-btn small alt">Xbox 360</span>
+        <span class="mock-btn small">DualShock 4</span>
+      </div>
+      <div class="mock-hint">DualShock 4 mode does not use an XInput controller slot.</div>
+
+      <div class="mock-section">Quick settings</div>
+      <div class="mock-btn">Vertical camera: Normal (click to invert)</div>
+      <div class="mock-btn">Start with Windows: Off</div>
+      <div class="mock-btn">Toggle hotkey: F9</div>
+
+      <div class="mock-footer-row">
+        <span class="mock-btn reset">Reset settings</span>
+        <span class="mock-btn exit">Exit GazeStick</span>
       </div>
     </div>
 
