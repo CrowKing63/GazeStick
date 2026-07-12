@@ -200,6 +200,19 @@ body {
   justify-content: center;
 }
 
+.hero-demos {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 360px;
+}
+
+.hero-demos .video-wrapper {
+  border-color: rgba(63, 185, 80, 0.25);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(63, 185, 80, 0.15);
+}
+
 .device {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -988,8 +1001,29 @@ body {
       </ul>
     </div>
     <div class="hero-visual">
-      <div class="device">
-        <img src="assets/main.png" alt="GazeStick settings popup" class="device-img" loading="lazy" />
+      <div class="hero-demos">
+        <div class="demo-item">
+          <div class="video-wrapper">
+            <iframe
+              src="https://www.youtube.com/embed/ZjwA1SRjoVQ?autoplay=1&mute=1&playsinline=1&loop=1&playlist=ZjwA1SRjoVQ&controls=1&modestbranding=1&rel=0&enablejsapi=1"
+              title="GazeStick Demo - Spider-Man"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen
+              loading="lazy">
+            </iframe>
+          </div>
+        </div>
+        <div class="demo-item">
+          <div class="video-wrapper">
+            <iframe
+              src="https://www.youtube.com/embed/5eiwslQ4hgk?autoplay=1&mute=1&playsinline=1&loop=1&playlist=5eiwslQ4hgk&controls=1&modestbranding=1&rel=0&enablejsapi=1"
+              title="GazeStick Demo - Borderlands 3"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen
+              loading="lazy">
+            </iframe>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1012,48 +1046,6 @@ body {
     </div>
   </div>
 </div>
-
-<!-- Demo Video -->
-<section class="section" id="demo" style="background: linear-gradient(180deg, rgba(63, 185, 80, 0.03) 0%, transparent 100%);">
-  <div class="container">
-    <div class="section-header">
-      <h2>Demo</h2>
-      <p>See GazeStick in action using only webcam eye tracking.</p>
-    </div>
-
-    <div class="demo-grid">
-      <div class="demo-item">
-        <div class="video-wrapper">
-          <iframe
-            src="https://www.youtube.com/embed/ZjwA1SRjoVQ?autoplay=1&mute=1&playsinline=1&loop=1&playlist=ZjwA1SRjoVQ&controls=1&modestbranding=1&rel=0&enablejsapi=1"
-            title="GazeStick Demo - Spider-Man"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowfullscreen
-            loading="lazy">
-          </iframe>
-        </div>
-        <p style="margin-top: 12px; color: var(--text-muted); font-size: 0.85rem;">
-          <a href="https://youtu.be/ZjwA1SRjoVQ" target="_blank" rel="noopener" style="color: var(--green);">Watch on YouTube →</a>
-        </p>
-      </div>
-
-      <div class="demo-item">
-        <div class="video-wrapper">
-          <iframe
-            src="https://www.youtube.com/embed/5eiwslQ4hgk?autoplay=1&mute=1&playsinline=1&loop=1&playlist=5eiwslQ4hgk&controls=1&modestbranding=1&rel=0&enablejsapi=1"
-            title="GazeStick Demo - Borderlands 3"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowfullscreen
-            loading="lazy">
-          </iframe>
-        </div>
-        <p style="margin-top: 12px; color: var(--text-muted); font-size: 0.85rem;">
-          <a href="https://youtu.be/5eiwslQ4hgk" target="_blank" rel="noopener" style="color: var(--green);">Watch on YouTube →</a>
-        </p>
-      </div>
-    </div>
-  </div>
-</section>
 
 <!-- How It Works -->
 <section class="section" id="how-it-works">
@@ -1256,52 +1248,8 @@ body {
       <p>All controls are accessible from a compact popup panel in the system tray.</p>
     </div>
 
-    <div class="settings-mockup">
-      <div class="mock-titlebar">
-        <span class="app-name">GazeStick</span>
-        <span class="status">TRACKING ON</span>
-      </div>
-      <div class="mock-beam">Beam Eye Tracker: Connected</div>
-
-      <div class="mock-toggle">Tracking: ON (click to turn off)</div>
-
-      <div class="mock-section">Tracking</div>
-      <div class="mock-param">
-        <div class="row"><span class="label">Deadzone</span><span class="value">0.10</span></div>
-        <div class="mock-slider"><div class="fill" style="width:20%"></div></div>
-      </div>
-      <div class="mock-param">
-        <div class="row"><span class="label">Sensitivity</span><span class="value">2.0</span></div>
-        <div class="mock-slider"><div class="fill" style="width:50%"></div></div>
-      </div>
-      <div class="mock-param">
-        <div class="row"><span class="label">Smoothing</span><span class="value">0.30</span></div>
-        <div class="mock-slider"><div class="fill" style="width:33%"></div></div>
-      </div>
-
-      <div class="mock-section">Response curve</div>
-      <div class="mock-btn">Curve: Linear</div>
-      <div class="mock-param">
-        <div class="row"><span class="label">Curve power</span><span class="value">2.0</span></div>
-        <div class="mock-slider"><div class="fill" style="width:42%"></div></div>
-      </div>
-
-      <div class="mock-section">Virtual controller output</div>
-      <div class="mock-btn-row">
-        <span class="mock-btn small alt">Xbox 360</span>
-        <span class="mock-btn small">DualShock 4</span>
-      </div>
-      <div class="mock-hint">DualShock 4 mode does not use an XInput controller slot.</div>
-
-      <div class="mock-section">Quick settings</div>
-      <div class="mock-btn">Vertical camera: Normal (click to invert)</div>
-      <div class="mock-btn">Start with Windows: Off</div>
-      <div class="mock-btn">Toggle hotkey: F9</div>
-
-      <div class="mock-footer-row">
-        <span class="mock-btn reset">Reset settings</span>
-        <span class="mock-btn exit">Exit GazeStick</span>
-      </div>
+    <div class="device" style="max-width: 360px; margin: 0 auto;">
+      <img src="assets/main.png" alt="GazeStick settings popup" class="device-img" loading="lazy" />
     </div>
 
     <div style="margin-top: 40px; max-width: 800px; margin-left: auto; margin-right: auto;">
