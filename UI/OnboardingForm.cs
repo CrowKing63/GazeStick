@@ -11,7 +11,7 @@ public sealed class OnboardingForm : Form
     public OnboardingForm()
     {
         Text = "Welcome to GazeStick";
-        Size = new Size(420, 300);
+        Size = new Size(436, 300);
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;

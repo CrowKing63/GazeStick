@@ -43,7 +43,7 @@ public sealed class PopupPanel : Form
 
     public bool IsActive { get => _isActive; set { _isActive = value; UpdateState(); } }
     public bool IsBeamConnected { get => _isBeamConnected; set { _isBeamConnected = value; UpdateState(); } }
-    public string HotkeyText { set { _hotkeyButton.Text = value; } }
+    public string HotkeyText { set { _hotkeyButton.Text = $"Toggle hotkey: {value} (click to change)"; } }
     public bool InvertY { get => _invertY; set { _invertY = value; UpdateState(); } }
     public bool AutoStart { get => _autoStart; set { _autoStart = value; UpdateState(); } }
     public CurveType Curve { get => _curve; set { _curve = value; UpdateState(); } }
@@ -64,7 +64,7 @@ public sealed class PopupPanel : Form
     {
         FormBorderStyle = FormBorderStyle.FixedSingle;
         StartPosition = FormStartPosition.Manual;
-        Size = new Size(376, 780);
+        Size = new Size(392, 800);
         MinimumSize = Size;
         MaximumSize = Size;
         BackColor = Color.FromArgb(28, 28, 30);
@@ -124,7 +124,7 @@ public sealed class PopupPanel : Form
         y += 36;
         _autoStartButton = CreateButton("Start with Windows: Off", new Point(16, y), new Size(340, 32), Color.FromArgb(45, 45, 50));
         y += 36;
-        _hotkeyButton = CreateButton("Toggle hotkey: F9", new Point(16, y), new Size(340, 32), Color.FromArgb(45, 45, 50));
+        _hotkeyButton = CreateButton("Toggle hotkey: F9 (click to change)", new Point(16, y), new Size(340, 32), Color.FromArgb(45, 45, 50));
         _invertYButton.Click += (_, _) => { _invertY = !_invertY; UpdateState(); InvertYChanged?.Invoke(_invertY); };
         _hotkeyButton.Click += (_, _) => StartHotkeyCapture();
         _autoStartButton.Click += (_, _) => { _autoStart = !_autoStart; UpdateState(); AutoStartChanged?.Invoke(_autoStart); };
@@ -225,7 +225,7 @@ public sealed class PopupPanel : Form
             if (e.Control) hotkey = "Ctrl+" + hotkey;
             if (e.Shift) hotkey = "Shift+" + hotkey;
             if (e.Alt) hotkey = "Alt+" + hotkey;
-            _hotkeyButton.Text = hotkey;
+            _hotkeyButton.Text = $"Toggle hotkey: {hotkey} (click to change)";
             _awaitingHotkey = false;
             HotkeyChanged?.Invoke(hotkey);
         }
