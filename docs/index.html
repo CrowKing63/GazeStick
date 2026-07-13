@@ -684,6 +684,35 @@ body {
   font-size: 0.9rem;
 }
 
+/* Settings Panel — side-by-side split (image + table) */
+.settings-split {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 40px;
+  align-items: start;
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.settings-split .device {
+  margin: 0;
+  max-width: 360px;
+}
+
+.settings-table-wrap {
+  min-width: 0;
+}
+
+@media (max-width: 860px) {
+  .settings-split {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .settings-split .device {
+    margin: 0 auto;
+  }
+}
+
 /* Settings Panel Mockup — mirrors the actual GazeStick popup */
 .settings-mockup {
   max-width: 360px;
@@ -1304,11 +1333,12 @@ body {
       <p>All controls are accessible from a compact popup panel in the system tray.</p>
     </div>
 
-    <div class="device" style="max-width: 360px; margin: 0 auto;">
-      <img src="assets/main.png" alt="GazeStick settings popup" class="device-img" loading="lazy" />
-    </div>
+    <div class="settings-split">
+      <div class="device">
+        <img src="assets/main.png" alt="GazeStick settings popup" class="device-img" loading="lazy" />
+      </div>
 
-    <div style="margin-top: 40px; max-width: 800px; margin-left: auto; margin-right: auto;">
+      <div class="settings-table-wrap">
       <table class="config-table">
         <thead>
           <tr><th>Setting</th><th>Description</th><th>Default</th></tr>
@@ -1324,6 +1354,7 @@ body {
           <tr><td><code>startActive</code></td><td>Start with tracking active</td><td>true</td></tr>
         </tbody>
       </table>
+      </div>
     </div>
   </div>
 </section>
