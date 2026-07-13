@@ -414,6 +414,31 @@ body {
   }
 }
 
+/* Standalone overview video (distinct from hero demo clips) */
+.overview-video {
+  width: min(1280px, 94vw);
+  margin: 48px auto 0;
+  padding: 0 24px;
+  text-align: center;
+}
+
+.overview-label {
+  display: inline-block;
+  margin-bottom: 16px;
+  padding: 6px 14px;
+  background: rgba(63, 185, 80, 0.1);
+  border: 1px solid rgba(63, 185, 80, 0.3);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--green);
+}
+
+.overview-video .video-wrapper {
+  border-color: rgba(63, 185, 80, 0.25);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(63, 185, 80, 0.15);
+}
+
 /* Section */
 .section {
   padding: 72px 0;
@@ -965,8 +990,8 @@ body {
       <span>GazeStick</span>
     </a>
     <div class="nav-links">
-      <a href="#features">Features</a>
       <a href="#how-it-works">How it works</a>
+      <a href="#features">Features</a>
       <a href="#downloads">Download</a>
       <a href="https://github.com/CrowKing63/GazeStick" class="nav-cta">GitHub</a>
     </div>
@@ -1080,6 +1105,19 @@ body {
         <span class="icon">🖥️</span>
         <span class="label">Your Game</span>
       </div>
+    </div>
+  </div>
+
+  <div class="overview-video">
+    <span class="overview-label">Official Overview</span>
+    <div class="video-wrapper">
+      <iframe
+        src="https://www.youtube.com/embed/YteNXZ5Fo7k?controls=1&modestbranding=1&rel=0"
+        title="Beam Eye Tracker — Official Overview"
+        allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen
+        loading="lazy">
+      </iframe>
     </div>
   </div>
 </section>
