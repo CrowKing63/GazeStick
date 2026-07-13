@@ -901,6 +901,57 @@ body {
   text-decoration: underline;
 }
 
+/* "Read this first" cue */
+.read-first {
+  max-width: 700px;
+  margin: 0 auto 40px;
+  padding: 14px 18px;
+  background: rgba(210, 153, 34, 0.08);
+  border: 1px solid var(--amber-border);
+  border-left: 3px solid var(--amber);
+  border-radius: var(--radius-sm);
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.read-first strong { color: var(--amber); }
+
+.read-first a {
+  color: var(--green);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.read-first a:hover { text-decoration: underline; }
+
+/* Short disclaimer near download buttons */
+.download-note {
+  max-width: 800px;
+  margin: 0 auto 36px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.download-note a {
+  color: var(--amber);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.download-note a:hover { text-decoration: underline; }
+
+/* Which-output-mode guide table */
+.choose-table {
+  margin: 20px auto 8px;
+  text-align: left;
+}
+
+.choose-table td:first-child {
+  white-space: nowrap;
+}
+
 /* Disclaimers */
 .disclaimers {
   display: flex;
@@ -1249,47 +1300,16 @@ body {
   </div>
 </section>
 
-<!-- Downloads -->
-<section class="section" id="downloads">
-  <div class="container">
-    <div class="section-header">
-      <h2>Downloads</h2>
-      <p>Two distribution options to suit your setup.</p>
-    </div>
-
-    <div class="prereq-grid">
-      <div class="prereq-card" style="border-color: var(--green);">
-        <span class="num" style="background: var(--green);">P</span>
-        <h3>Portable <span class="badge" style="font-size: 0.65rem;">Recommended <sup style="color: var(--text-muted);">*</sup></span></h3>
-        <p>Self-contained <code>.zip</code> archive — no installation needed. Just extract and run <code>GazeStick.exe</code>. Requires <a href="#prerequisites">ViGEmBus</a> to be installed separately.</p>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;">
-          <sup>*</sup> Recommended if you already have ViGEmBus installed or are comfortable installing drivers manually.
-        </p>
-        <a href="https://github.com/CrowKing63/GazeStick/releases/latest" target="_blank" rel="noopener">
-          Download Portable →
-        </a>
-      </div>
-      <div class="prereq-card">
-        <span class="num">I</span>
-        <h3>Installer</h3>
-        <p>Inno Setup <code>.exe</code> that installs GazeStick to Program Files, adds a Start Menu entry, and can auto-download &amp; install ViGEmBus if missing.</p>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;">
-          Best for first-time users who want a guided setup.
-        </p>
-        <a href="https://github.com/CrowKing63/GazeStick/releases/latest" target="_blank" rel="noopener">
-          Download Installer →
-        </a>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- Quick Start -->
 <section class="section" id="quick-start">
   <div class="container">
     <div class="section-header">
       <h2>Quick Start</h2>
       <p>Get up and running in under 2 minutes.</p>
+    </div>
+
+    <div class="read-first">
+      <strong>Read this first:</strong> GazeStick needs <a href="#prerequisites">ViGEmBus</a> and the <a href="#prerequisites">Beam Eye Tracker app</a> already installed and running. Confirm the <a href="#prerequisites">Prerequisites</a> before downloading.
     </div>
 
     <div class="steps">
@@ -1320,6 +1340,45 @@ body {
           <h3>Look & Play</h3>
           <p>Look at the center of your screen to keep the stick neutral. Look toward the edges to move the virtual stick in that direction.</p>
         </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Downloads -->
+<section class="section" id="downloads">
+  <div class="container">
+    <div class="section-header">
+      <h2>Downloads</h2>
+      <p>Two distribution options to suit your setup.</p>
+    </div>
+
+    <p class="download-note">
+      Not a medical device. Do not use in safety-critical or high-risk environments. See <a href="#disclaimers">Important Notices</a>.
+    </p>
+
+    <div class="prereq-grid">
+      <div class="prereq-card" style="border-color: var(--green);">
+        <span class="num" style="background: var(--green);">P</span>
+        <h3>Portable <span class="badge" style="font-size: 0.65rem;">Recommended <sup style="color: var(--text-muted);">*</sup></span></h3>
+        <p>Self-contained <code>.zip</code> archive — no installation needed. Just extract and run <code>GazeStick.exe</code>. Requires <a href="#prerequisites">ViGEmBus</a> to be installed separately.</p>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;">
+          <sup>*</sup> Recommended if you already have ViGEmBus installed or are comfortable installing drivers manually.
+        </p>
+        <a href="https://github.com/CrowKing63/GazeStick/releases/latest" target="_blank" rel="noopener">
+          Download Portable →
+        </a>
+      </div>
+      <div class="prereq-card">
+        <span class="num">I</span>
+        <h3>Installer</h3>
+        <p>Inno Setup <code>.exe</code> that installs GazeStick to Program Files, adds a Start Menu entry, and can auto-download &amp; install ViGEmBus if missing.</p>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;">
+          Best for first-time users who want a guided setup.
+        </p>
+        <a href="https://github.com/CrowKing63/GazeStick/releases/latest" target="_blank" rel="noopener">
+          Download Installer →
+        </a>
       </div>
     </div>
   </div>
@@ -1407,6 +1466,27 @@ body {
     <div class="combination">
       <h3>Pair with your preferred input tools</h3>
       <p>GazeStick is designed to be one piece of your input setup. Use controller-mapping or device-combination software to combine its virtual controller with physical controllers, keyboard, mouse, or other inputs.</p>
+
+      <h3 style="margin-top: 32px;">Which output mode should I choose?</h3>
+      <p style="font-size:0.9rem; color: var(--text-muted);">Windows supports up to <strong style="color: var(--text);">4 XInput controllers</strong> at once. If you already plug in several gamepads, an Xbox 360 virtual controller may not be recognized.</p>
+      <table class="config-table choose-table">
+        <thead>
+          <tr><th>Mode</th><th>Best for</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>Xbox 360</code></td>
+            <td>Broadest game compatibility</td>
+            <td>Uses one of Windows' 4 XInput slots. If all 4 are taken by physical controllers, the game won't see GazeStick.</td>
+          </tr>
+          <tr>
+            <td><code>DualShock 4</code></td>
+            <td>Avoiding XInput slot conflicts</td>
+            <td>Appears as a DS4 and does <strong style="color: var(--text);">not</strong> consume an XInput slot. Needs game or mapping-layer (e.g. DS4Windows) DS4 support.</td>
+          </tr>
+        </tbody>
+      </table>
+
       <p style="font-size:0.9rem; color: var(--text-muted);">Xbox 360 mode offers broad game compatibility. DualShock 4 mode does not consume one of Windows' four XInput controller slots, but may require game or mapping-layer DS4 support.</p>
     </div>
   </div>
