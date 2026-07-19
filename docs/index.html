@@ -416,10 +416,27 @@ body {
 
 /* Standalone overview video (distinct from hero demo clips) */
 .overview-video {
-  width: 800px;
+  width: 1040px;
   max-width: 100%;
   margin: 48px auto 0;
   padding: 0 24px;
+  text-align: center;
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .overview-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.overview-item {
   text-align: center;
 }
 
@@ -1224,15 +1241,31 @@ body {
   </div>
 
   <div class="overview-video">
-    <span class="overview-label">Official Overview</span>
-    <div class="video-wrapper">
-      <iframe
-        src="https://www.youtube.com/embed/YteNXZ5Fo7k?controls=1&modestbranding=1&rel=0"
-        title="Beam Eye Tracker — Official Overview"
-        allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        allowfullscreen
-        loading="lazy">
-      </iframe>
+    <div class="overview-grid">
+      <div class="overview-item">
+        <span class="overview-label">Official Overview</span>
+        <div class="video-wrapper">
+          <iframe
+            src="https://www.youtube.com/embed/YteNXZ5Fo7k?controls=1&modestbranding=1&rel=0"
+            title="Beam Eye Tracker — Official Overview"
+            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen
+            loading="lazy">
+          </iframe>
+        </div>
+      </div>
+      <div class="overview-item">
+        <span class="overview-label">GazeStick in Action</span>
+        <div class="video-wrapper">
+          <iframe
+            src="https://www.youtube.com/embed/ta1A16G9I8A?controls=1&modestbranding=1&rel=0"
+            title="GazeStick Demo — Gamepad Test Site"
+            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen
+            loading="lazy">
+          </iframe>
+        </div>
+      </div>
     </div>
   </div>
 </section>
