@@ -81,15 +81,6 @@ Gaze data is processed locally for controller mapping. GazeStick does not log, r
 
 **High-Risk Use Prohibition:** This software must not be used in high-risk environments or safety-critical applications where any software malfunction or interruption could lead to personal injury, loss of life, or physical/environmental damage.
 
-## Changelog
-
-### v1.2.0
-
-- Added immediate Xbox 360 / DualShock 4 output selection.
-- Changed the default sensitivity to 2.0.
-- Redesigned the tray popup for visibility, readability, and outside-click dismissal.
-- Updated combination-tool guidance to be vendor neutral.
-
 ## License
 
 MIT
