@@ -10,9 +10,12 @@ public sealed class StickMapper
     private bool _hasPrev = false;
 
     private const double ReferenceFrameMs = 1000.0 / 30.0;
+    private const long MaxHoldMs = 250;
     private double _prevRawY;
     private long _prevRawMs;
     private bool _hasPrevRaw;
+    private bool _holding;
+    private long _holdStartedMs;
 
     public StickOutput Map(GazePoint gaze, AppSettings settings)
     {
@@ -37,11 +40,33 @@ public sealed class StickMapper
 
                 double rawDy = gy - _prevRawY;
                 double clamp = settings.BlinkClampThreshold;
+                bool shouldHold = false;
                 if (clamp > 0.0 && rawDy > 0.0)
                 {
                     double normDy = elapsedMs > 0 ? rawDy * (ReferenceFrameMs / elapsedMs) : rawDy;
                     if (normDy > clamp)
+                        shouldHold = true;
+                }
+
+                if (shouldHold)
+                {
+                    if (_holding && nowMs - _holdStartedMs >= MaxHoldMs)
+                    {
+                        _holding = false;
+                    }
+                    else
+                    {
+                        if (!_holding)
+                        {
+                            _holding = true;
+                            _holdStartedMs = nowMs;
+                        }
                         gy = _prevRawY;
+                    }
+                }
+                else
+                {
+                    _holding = false;
                 }
 
                 _prevRawMs = nowMs;
@@ -144,5 +169,7 @@ public sealed class StickMapper
         _prevRawY = 0.0;
         _prevRawMs = 0;
         _hasPrevRaw = false;
+        _holding = false;
+        _holdStartedMs = 0;
     }
 }
