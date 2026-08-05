@@ -9,13 +9,54 @@ public sealed class StickMapper
     private double _prevY = 0.0;
     private bool _hasPrev = false;
 
+    private const double ReferenceFrameMs = 1000.0 / 30.0;
+    private double _prevRawY;
+    private long _prevRawMs;
+    private bool _hasPrevRaw;
+
     public StickOutput Map(GazePoint gaze, AppSettings settings)
     {
         if (!gaze.IsValid)
+        {
+            lock (_lock)
+            {
+                ResetRaw();
+            }
             return StickOutput.Neutral;
+        }
 
-        double dx = gaze.X - 0.5;
-        double dy = gaze.Y - 0.5;
+        double gx = gaze.X;
+        double gy = gaze.Y;
+
+        lock (_lock)
+        {
+            if (_hasPrevRaw)
+            {
+                long nowMs = Environment.TickCount64;
+                long elapsedMs = nowMs - _prevRawMs;
+
+                double rawDy = gy - _prevRawY;
+                double clamp = settings.BlinkClampThreshold;
+                if (clamp > 0.0 && rawDy > 0.0)
+                {
+                    double normDy = elapsedMs > 0 ? rawDy * (ReferenceFrameMs / elapsedMs) : rawDy;
+                    if (normDy > clamp)
+                        gy = _prevRawY;
+                }
+
+                _prevRawMs = nowMs;
+            }
+            else
+            {
+                _prevRawMs = Environment.TickCount64;
+            }
+
+            _prevRawY = gy;
+            _hasPrevRaw = true;
+        }
+
+        double dx = gx - 0.5;
+        double dy = gy - 0.5;
 
         double distance = Math.Sqrt(dx * dx + dy * dy);
         double deadzone = Math.Clamp(settings.Deadzone, 0.0, 0.5);
@@ -94,6 +135,14 @@ public sealed class StickMapper
             _prevX = 0.0;
             _prevY = 0.0;
             _hasPrev = false;
+            ResetRaw();
         }
+    }
+
+    private void ResetRaw()
+    {
+        _prevRawY = 0.0;
+        _prevRawMs = 0;
+        _hasPrevRaw = false;
     }
 }

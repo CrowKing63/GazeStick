@@ -11,6 +11,7 @@ public sealed class PopupPanel : Form
     private readonly NumericAdjuster _deadzoneControl;
     private readonly NumericAdjuster _sensitivityControl;
     private readonly NumericAdjuster _smoothingControl;
+    private readonly NumericAdjuster _blinkClampControl;
     private readonly NumericAdjuster _curvePowerControl;
     private readonly Button _toggleButton;
     private readonly Button _xboxButton;
@@ -32,6 +33,7 @@ public sealed class PopupPanel : Form
     public event Action<double>? DeadzoneChanged;
     public event Action<double>? SensitivityChanged;
     public event Action<double>? SmoothingChanged;
+    public event Action<double>? BlinkClampChanged;
     public event Action<string>? HotkeyChanged;
     public event Action<bool>? InvertYChanged;
     public event Action<CurveType>? CurveTypeChanged;
@@ -52,6 +54,7 @@ public sealed class PopupPanel : Form
     public double DeadzoneValue { set => _deadzoneControl.Value = value; }
     public double SensitivityValue { set => _sensitivityControl.Value = value; }
     public double SmoothingValue { set => _smoothingControl.Value = value; }
+    public double BlinkClampValue { set => _blinkClampControl.Value = value; }
     public bool SuppressAutoClose { get; set; }
 
     public void ShowSettingsNotice(string message)
@@ -64,7 +67,7 @@ public sealed class PopupPanel : Form
     {
         FormBorderStyle = FormBorderStyle.FixedSingle;
         StartPosition = FormStartPosition.Manual;
-        Size = new Size(392, 800);
+        Size = new Size(392, 860);
         MinimumSize = Size;
         MaximumSize = Size;
         BackColor = Color.FromArgb(28, 28, 30);
@@ -97,6 +100,8 @@ public sealed class PopupPanel : Form
         _sensitivityControl.ValueChanged += value => SensitivityChanged?.Invoke(value);
         _smoothingControl = AddAdjuster("Smoothing", "Reduces small, rapid input changes.", 0.30, 0.0, 0.9, 0.05, 2, ref y);
         _smoothingControl.ValueChanged += value => SmoothingChanged?.Invoke(value);
+        _blinkClampControl = AddAdjuster("Blink clamp (rec. 0.12)", "Suppresses sudden downward gaze spikes (blinks). 0 = off.", 0.0, 0.0, 0.50, 0.01, 2, ref y);
+        _blinkClampControl.ValueChanged += value => BlinkClampChanged?.Invoke(value);
 
         AddSectionLabel("Response curve", ref y);
         _curveButton = CreateButton("Curve: Linear", new Point(16, y), new Size(160, 30), Color.FromArgb(45, 45, 50));
@@ -187,6 +192,7 @@ public sealed class PopupPanel : Form
         _deadzoneControl.SetEnabledState(_isActive);
         _sensitivityControl.SetEnabledState(_isActive);
         _smoothingControl.SetEnabledState(_isActive);
+        _blinkClampControl.SetEnabledState(_isActive);
         _curveButton.Text = $"Curve: {_curve switch { CurveType.Exponential => "Exponential", CurveType.Logarithmic => "Logarithmic", _ => "Linear" }}";
         _curvePowerControl.Visible = _curve != CurveType.Linear;
         _invertYButton.Text = _invertY ? "Vertical camera: Inverted (click to restore)" : "Vertical camera: Normal (click to invert)";

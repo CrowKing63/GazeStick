@@ -44,8 +44,18 @@ Change the output mode from the tray popup. GazeStick immediately disconnects th
 | Toggle tracking | Tray icon or `F9` |
 | Open settings | Click the tray icon |
 | Change output mode | Select Xbox 360 or DualShock 4 in the popup |
-| Adjust tracking | Use the Deadzone, Sensitivity, Smoothing, and Curve controls |
+| Adjust tracking | Use the Deadzone, Sensitivity, Smoothing, Blink clamp, and Curve controls |
 | Close settings | Press `Esc` or click anywhere outside the popup |
+
+## Blink clamp
+
+Looking down causes a short, rapid downward spike in the gaze signal that can yank the camera toward the ground. The Blink clamp setting suppresses those spikes by holding the previous vertical position whenever the downward gaze velocity exceeds the threshold. The threshold is normalized per frame time, so it behaves consistently at different webcam frame rates.
+
+| Setting | Recommended |
+|---|---|
+| Blink clamp | `0.12` (working range roughly `0.10`–`0.15`); `0` disables the feature |
+
+Start at `0.12` and lower it if legitimate fast downward glances are being held, or raise it if blink spikes are still visible.
 
 ## Configuration
 
@@ -56,6 +66,7 @@ Settings are saved to `%AppData%\GazeStick\settings.json`.
 | `deadzone` | 0.10 | Circular neutral radius (0.00–0.50). |
 | `sensitivity` | 2.0 | Stick output multiplier (0.1–5.0). |
 | `smoothing` | 0.30 | EMA smoothing factor (0.0–0.9). |
+| `blinkClamp` | 0.0 | Downward gaze-spike suppression threshold (0.00–0.50). See [Blink clamp](#blink-clamp). |
 | `outputType` | `Xbox360` | Virtual-controller output mode. |
 | `invertY` | false | Invert vertical camera output. |
 | `toggleHotkey` | `F9` | Global tracking-toggle hotkey. |

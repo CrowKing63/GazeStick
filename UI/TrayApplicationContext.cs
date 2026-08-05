@@ -253,11 +253,13 @@ public sealed class TrayApplicationContext : ApplicationContext
             DeadzoneValue = _settings.Deadzone,
             SensitivityValue = _settings.Sensitivity,
             SmoothingValue = _settings.Smoothing,
+            BlinkClampValue = _settings.BlinkClampThreshold,
         };
 
         _popup.DeadzoneChanged += v => { _settings.Deadzone = v; SettingsManager.Save(_settings); };
         _popup.SensitivityChanged += v => { _settings.Sensitivity = v; SettingsManager.Save(_settings); };
         _popup.SmoothingChanged += v => { _settings.Smoothing = v; SettingsManager.Save(_settings); };
+        _popup.BlinkClampChanged += v => { _settings.BlinkClampThreshold = v; SettingsManager.Save(_settings); };
         _popup.InvertYChanged += v => { _settings.InvertY = v; SettingsManager.Save(_settings); };
         _popup.CurveTypeChanged += v => { _settings.Curve = v; SettingsManager.Save(_settings); };
         _popup.CurvePowerChanged += v => { _settings.CurvePower = v; SettingsManager.Save(_settings); };
@@ -330,6 +332,7 @@ public sealed class TrayApplicationContext : ApplicationContext
         _settings.Deadzone = 0.10;
         _settings.Sensitivity = 2.0;
         _settings.Smoothing = 0.30;
+        _settings.BlinkClampThreshold = 0.0;
         _settings.InvertY = false;
         _settings.ToggleHotkey = "F9";
         _settings.Curve = CurveType.Linear;
@@ -361,6 +364,7 @@ public sealed class TrayApplicationContext : ApplicationContext
             _popup.DeadzoneValue = _settings.Deadzone;
             _popup.SensitivityValue = _settings.Sensitivity;
             _popup.SmoothingValue = _settings.Smoothing;
+            _popup.BlinkClampValue = _settings.BlinkClampThreshold;
             _popup.InvertY = _settings.InvertY;
             _popup.Curve = _settings.Curve;
             _popup.CurvePower = _settings.CurvePower;

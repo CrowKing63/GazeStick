@@ -9,7 +9,6 @@ public class NumericAdjuster : UserControl
     private readonly Panel _valuePanel;
     private readonly Label _lblValue;
     private readonly Button _btnPlus;
-    private readonly ToolTip _toolTip = new();
 
     private double _value;
     private double _min;
@@ -102,8 +101,6 @@ public class NumericAdjuster : UserControl
         _btnPlus.FlatAppearance.MouseOverBackColor = Color.FromArgb(60, 60, 65);
         _btnPlus.Click += (_, _) => AdjustValue(_step);
         _btnPlus.MouseDown += (_, _) => _btnPlus.FlatAppearance.MouseDownBackColor = Color.FromArgb(70, 70, 75);
-
-        _toolTip.SetToolTip(_valuePanel, "Drag to adjust continuously");
 
         Controls.AddRange(new Control[] { _btnMinus, _valuePanel, _btnPlus });
         Resize += (_, _) => UpdateLayout();
