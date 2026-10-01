@@ -86,13 +86,12 @@ public sealed class BeamTrackingService : ITrackingService
             if (gaze.Confidence == TrackingConfidence.LostTracking)
                 return;
 
-            float x = gaze.NormalizedPointOfRegard.X;
-            float y = gaze.NormalizedPointOfRegard.Y;
+            // Clamp to the viewport so gaze outside the screen still produces a
+            // full-deflection stick value instead of being dropped entirely.
+            float x = Math.Clamp(gaze.NormalizedPointOfRegard.X, 0.0f, 1.0f);
+            float y = Math.Clamp(gaze.NormalizedPointOfRegard.Y, 0.0f, 1.0f);
 
-            if (x >= 0.0f && x <= 1.0f && y >= 0.0f && y <= 1.0f)
-            {
-                GazeReceived?.Invoke(new GazePoint(x, y));
-            }
+            GazeReceived?.Invoke(new GazePoint(x, y));
         }
         catch (ObjectDisposedException) { }
         catch (Exception ex)
