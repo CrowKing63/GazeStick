@@ -70,6 +70,7 @@ Settings are saved to `%AppData%\GazeStick\settings.json`.
 | `outputType` | `Xbox360` | Virtual-controller output mode. |
 | `invertY` | false | Invert vertical camera output. |
 | `toggleHotkey` | `F9` | Global tracking-toggle hotkey. |
+| `targetDisplay` | `""` (primary) | Device name of the display whose bounds define the viewport and stick neutral point (e.g. `\\.\DISPLAY1`). Empty uses the primary screen; a missing key in older settings files loads as empty. |
 
 ## Designed for combination
 

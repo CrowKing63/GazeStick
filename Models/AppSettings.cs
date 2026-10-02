@@ -16,4 +16,9 @@ public sealed class AppSettings
     public double CurvePower { get; set; } = 2.0;
     public bool ShowOnboarding { get; set; } = true;
     public OutputType OutputType { get; set; } = OutputType.Xbox360;
+    /// <summary>
+    /// Device name of the display to target for viewport geometry (e.g. "\\.\DISPLAY1").
+    /// Empty string means the primary screen. Old settings files without this key load with "".
+    /// </summary>
+    public string TargetDisplay { get; set; } = "";
 }

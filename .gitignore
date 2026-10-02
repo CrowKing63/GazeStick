@@ -10,6 +10,7 @@ _beam_sdk_temp_extract/
 GazeStick-*.zip
 publish/
 publish_test/
+publish-portable/
 stdout.txt
 stderr.txt
 .hermes/

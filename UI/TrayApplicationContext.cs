@@ -47,10 +47,16 @@ public sealed class TrayApplicationContext : ApplicationContext
         _tracker.GazeReceived += OnGazeReceived;
         _tracker.ConnectionChanged += OnConnectionChanged;
         _tracker.ErrorOccurred += OnError;
+        _tracker.ViewportChanged += OnViewportChanged;
+        _tracker.TargetDisplayMissing += OnTargetDisplayMissing;
 
         _pad.ErrorOccurred += OnError;
 
         _hotkeyWindow.HotkeyPressed += ToggleActive;
+        // Primary display-change detection: WM_DISPLAYCHANGE is broadcast to every
+        // window on monitor configuration/resolution changes, including virtual
+        // displays. The 10 s fallback poll inside the tracker guards against misses.
+        _hotkeyWindow.DisplayChanged += () => _tracker.RequestGeometryUpdate();
 
         InitializeServices();
 
@@ -94,6 +100,10 @@ public sealed class TrayApplicationContext : ApplicationContext
         _reconnectAttempts = 0;
         _reconnectTimer = new System.Windows.Forms.Timer();
         _reconnectTimer.Tick += ReconnectTimerTick;
+
+        // Apply the configured target display before the first Start() so the
+        // initial viewport geometry is computed against the right screen.
+        _tracker.TargetDisplay = _settings.TargetDisplay;
 
         _tracker.Start();
 
@@ -167,6 +177,29 @@ public sealed class TrayApplicationContext : ApplicationContext
                 text = text[..124] + "...";
             _trayIcon.Text = text;
             _trayIcon.ShowBalloonTip(3000, "GazeStick", message, ToolTipIcon.Warning);
+        }
+        catch { }
+    }
+
+    private void OnViewportChanged(Eyeware.BeamEyeTracker.ViewportGeometry geom)
+    {
+        // A debounced geometry change landed. Show a one-shot tray banner so the
+        // user knows the stick neutral point was re-mapped to the current display.
+        try
+        {
+            _trayIcon.ShowBalloonTip(4000, "GazeStick",
+                "Display changed — stick neutral point updated.", ToolTipIcon.Info);
+        }
+        catch { }
+    }
+
+    private void OnTargetDisplayMissing(string deviceName)
+    {
+        // The selected display disappeared; the tracker fell back to primary.
+        try
+        {
+            _trayIcon.ShowBalloonTip(5000, "GazeStick",
+                $"Display {deviceName} is no longer available — using primary screen.", ToolTipIcon.Warning);
         }
         catch { }
     }
@@ -256,6 +289,8 @@ public sealed class TrayApplicationContext : ApplicationContext
             BlinkClampValue = _settings.BlinkClampThreshold,
         };
 
+        _popup.SetTargetDisplay(_settings.TargetDisplay);
+
         _popup.DeadzoneChanged += v => { _settings.Deadzone = v; SettingsManager.Save(_settings); };
         _popup.SensitivityChanged += v => { _settings.Sensitivity = v; SettingsManager.Save(_settings); };
         _popup.SmoothingChanged += v => { _settings.Smoothing = v; SettingsManager.Save(_settings); };
@@ -288,6 +323,13 @@ public sealed class TrayApplicationContext : ApplicationContext
             {
                 _popup.OutputType = _settings.OutputType;
             }
+        };
+        _popup.TargetDisplayChanged += deviceName =>
+        {
+            // Persist the selection and re-map the viewport to that display.
+            _settings.TargetDisplay = deviceName;
+            SettingsManager.Save(_settings);
+            _tracker.TargetDisplay = deviceName;
         };
         _popup.ResetRequested += ResetSettings;
         _popup.ToggleChanged += v => { _isActive = v; UpdateTrayText(); if (!v) _pad.Reset(); };
@@ -339,6 +381,8 @@ public sealed class TrayApplicationContext : ApplicationContext
         _settings.CurvePower = 2.0;
         _settings.StartActive = true;
         _settings.StartWithWindows = false;
+        _settings.TargetDisplay = "";
+        _tracker.TargetDisplay = "";
         if (!_pad.SetOutputType(OutputType.Xbox360))
         {
             OnError("Could not restore the default Xbox 360 output mode.");
@@ -371,6 +415,7 @@ public sealed class TrayApplicationContext : ApplicationContext
             _popup.AutoStart = _settings.StartWithWindows;
             _popup.OutputType = _settings.OutputType;
             _popup.HotkeyText = _settings.ToggleHotkey;
+            _popup.SetTargetDisplay(_settings.TargetDisplay);
             _popup.ShowSettingsNotice("All settings restored to defaults.");
         }
     }
@@ -433,7 +478,9 @@ public sealed class TrayApplicationContext : ApplicationContext
     private sealed class HotkeyWindow : NativeWindow
     {
         private const int WM_HOTKEY = 0x0312;
+        private const int WM_DISPLAYCHANGE = 0x007E;
         public event Action? HotkeyPressed;
+        public event Action? DisplayChanged;
 
         public HotkeyWindow()
         {
@@ -450,6 +497,12 @@ public sealed class TrayApplicationContext : ApplicationContext
             if (m.Msg == WM_HOTKEY)
             {
                 HotkeyPressed?.Invoke();
+            }
+            else if (m.Msg == WM_DISPLAYCHANGE)
+            {
+                // Broadcast by Windows on any monitor configuration or resolution
+                // change (including virtual-display hot-plug). Primary detection path.
+                DisplayChanged?.Invoke();
             }
             base.WndProc(ref m);
         }

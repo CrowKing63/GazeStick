@@ -241,6 +241,11 @@ namespace Eyeware.BeamEyeTracker
         [DllImport("beam_eye_tracker_client")]
         private static extern void EW_BET_API_GetVersion(IntPtr apiHandle, out Version version);
 
+        [DllImport("beam_eye_tracker_client")]
+        private static extern void EW_BET_API_UpdateViewportGeometry(
+            IntPtr apiHandle,
+            ViewportGeometry newViewportGeometry);
+
         public const uint DefaultTrackingDataTimeoutMs = 1000;
 
         public API(string friendlyName, ViewportGeometry initialViewportGeometry)
@@ -258,6 +263,18 @@ namespace Eyeware.BeamEyeTracker
             ThrowIfDisposed();
             EW_BET_API_GetVersion(apiHandle, out Version version);
             return version;
+        }
+
+        /// <summary>
+        /// Updates the viewport geometry of a live API handle so that normalized
+        /// gaze coordinates are computed against the current display bounds.
+        /// Call after any monitor configuration or resolution change while the
+        /// Beam Eye Tracker app is connected.
+        /// </summary>
+        public void UpdateViewportGeometry(ViewportGeometry newViewportGeometry)
+        {
+            ThrowIfDisposed();
+            EW_BET_API_UpdateViewportGeometry(apiHandle, newViewportGeometry);
         }
 
         public TrackingDataReceptionStatus GetTrackingDataReceptionStatus()

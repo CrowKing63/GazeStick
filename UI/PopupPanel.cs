@@ -20,6 +20,7 @@ public sealed class PopupPanel : Form
     private readonly Button _hotkeyButton;
     private readonly Button _autoStartButton;
     private readonly Button _curveButton;
+    private readonly ComboBox _displayCombo;
     private readonly Label _settingsNotice;
     private bool _isActive;
     private bool _isBeamConnected;
@@ -40,6 +41,7 @@ public sealed class PopupPanel : Form
     public event Action<double>? CurvePowerChanged;
     public event Action<bool>? AutoStartChanged;
     public event Action<OutputType>? OutputTypeChanged;
+    public event Action<string>? TargetDisplayChanged;
     public event Action? ResetRequested;
     public event Action? ExitRequested;
 
@@ -57,6 +59,48 @@ public sealed class PopupPanel : Form
     public double BlinkClampValue { set => _blinkClampControl.Value = value; }
     public bool SuppressAutoClose { get; set; }
 
+    /// <summary>
+    /// Sets the selected target display by device name (empty = primary).
+    /// Selects the matching combo item without firing TargetDisplayChanged.
+    /// </summary>
+    public void SetTargetDisplay(string deviceName)
+    {
+        if (_displayCombo == null) return;
+        foreach (var item in _displayCombo.Items)
+        {
+            if (item is DisplayEntry e && e.DeviceName == (deviceName ?? ""))
+            {
+                _displayCombo.SelectedItem = item;
+                return;
+            }
+        }
+    }
+
+    private void PopulateDisplayCombo(string selectedDeviceName)
+    {
+        var items = new List<DisplayEntry>
+        {
+            new DisplayEntry("", "Primary (default)")
+        };
+        foreach (var s in System.Windows.Forms.Screen.AllScreens)
+        {
+            string label = $"{s.DeviceName} ({s.Bounds.Width}x{s.Bounds.Height}" +
+                           (s.Primary ? ", primary" : "") + ")";
+            items.Add(new DisplayEntry(s.DeviceName, label));
+        }
+
+        _displayCombo.Items.Clear();
+        foreach (var e in items)
+            _displayCombo.Items.Add(e);
+
+        SetTargetDisplay(selectedDeviceName);
+    }
+
+    private sealed record DisplayEntry(string DeviceName, string Label)
+    {
+        public override string ToString() => Label;
+    }
+
     public void ShowSettingsNotice(string message)
     {
         _settingsNotice.Text = message;
@@ -67,7 +111,7 @@ public sealed class PopupPanel : Form
     {
         FormBorderStyle = FormBorderStyle.FixedSingle;
         StartPosition = FormStartPosition.Manual;
-        Size = new Size(392, 860);
+        Size = new Size(392, 908);
         MinimumSize = Size;
         MaximumSize = Size;
         BackColor = Color.FromArgb(28, 28, 30);
@@ -93,6 +137,19 @@ public sealed class PopupPanel : Form
 
         Controls.AddRange(new Control[] { title, _statusLabel, _beamStatusLabel, _toggleButton });
         AddSectionLabel("Tracking", ref y);
+
+        // Display selection: pick which monitor's bounds define the viewport
+        // (and therefore the stick neutral point). Empty/primary by default.
+        var displayTitle = new Label { Text = "Target display", Location = new Point(16, y), Size = new Size(340, 18), Font = new Font("Segoe UI", 9f, FontStyle.Bold), ForeColor = Color.FromArgb(220, 220, 225) };
+        _displayCombo = new ComboBox { Location = new Point(16, y + 18), Width = 340, DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Segoe UI", 9f), AccessibleName = "Target display" };
+        PopulateDisplayCombo("");
+        _displayCombo.SelectedIndexChanged += (_, _) =>
+        {
+            if (_displayCombo.SelectedItem is string deviceName)
+                TargetDisplayChanged?.Invoke(deviceName);
+        };
+        Controls.AddRange(new Control[] { displayTitle, _displayCombo });
+        y += 62;
 
         _deadzoneControl = AddAdjuster("Deadzone", "Neutral radius before stick output begins.", 0.10, 0.0, 0.50, 0.01, 2, ref y);
         _deadzoneControl.ValueChanged += value => DeadzoneChanged?.Invoke(value);
