@@ -101,6 +101,59 @@ public sealed class PopupPanel : Form
         public override string ToString() => Label;
     }
 
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern int GetDpiForWindow(IntPtr hwnd);
+
+    private bool _scaled;
+
+    protected override void OnShown(EventArgs e)
+    {
+        base.OnShown(e);
+        if (_scaled) return;
+        _scaled = true;
+        ScaleLayout();
+        CenterOnScreen();
+    }
+
+    /// <summary>
+    /// Scales every control's location and size (and the form size) by the display
+    /// DPI relative to the 96 dpi design baseline. WinForms' PMv2 awareness already
+    /// auto-scales fonts, so scaling the fixed pixel layout by the same factor makes
+    /// the whole panel — window, margins included — follow the Windows display scale.
+    /// </summary>
+    private void ScaleLayout()
+    {
+        float scale = 1f;
+        try
+        {
+            int dpi = GetDpiForWindow(Handle);
+            if (dpi > 0)
+                scale = dpi / 96f;
+        }
+        catch { }
+
+        if (Math.Abs(scale - 1f) < 0.001f) return;
+
+        Size = new Size((int)Math.Round(Size.Width * scale), (int)Math.Round(Size.Height * scale));
+        foreach (Control c in Controls)
+        {
+            c.Location = new Point((int)Math.Round(c.Location.X * scale), (int)Math.Round(c.Location.Y * scale));
+            c.Size = new Size((int)Math.Round(c.Size.Width * scale), (int)Math.Round(c.Size.Height * scale));
+        }
+    }
+
+    /// <summary>Centers the panel in the working area of the screen under the cursor.</summary>
+    private void CenterOnScreen()
+    {
+        var screen = Screen.FromPoint(Cursor.Position);
+        var wa = screen.WorkingArea;
+        int x = wa.Left + (wa.Width - Width) / 2;
+        int y = wa.Top + (wa.Height - Height) / 2;
+        x = Math.Clamp(x, wa.Left, wa.Right - Width);
+        y = Math.Max(y, wa.Top);
+        Location = new Point(x, y);
+    }
+
     public void ShowSettingsNotice(string message)
     {
         _settingsNotice.Text = message;
@@ -111,23 +164,25 @@ public sealed class PopupPanel : Form
     {
         FormBorderStyle = FormBorderStyle.FixedSingle;
         StartPosition = FormStartPosition.Manual;
-        Size = new Size(392, 908);
-        MinimumSize = Size;
-        MaximumSize = Size;
+        // We scale the layout ourselves (see ScaleLayout) so AutoScaleMode stays None:
+        // WinForms' PMv2 awareness already auto-scales fonts, and letting it also
+        // scale this fixed pixel layout would double-scale and fight Minimum/MaximumSize.
+        AutoScaleMode = AutoScaleMode.None;
+        Size = new Size(392, 920);
         BackColor = Color.FromArgb(28, 28, 30);
         ForeColor = Color.White;
         ShowInTaskbar = false;
         TopMost = true;
         KeyPreview = true;
-        Font = new Font("Segoe UI", 9f);
+        Font = new Font("Segoe UI", 10f);
         KeyDown += OnPanelKeyDown;
         Deactivate += (_, _) => BeginInvoke(CloseIfInactive);
 
         int y = 14;
-        var title = new Label { Text = "GazeStick", Font = new Font("Segoe UI", 14f, FontStyle.Bold), ForeColor = Color.White, Location = new Point(16, y), AutoSize = true };
-        _statusLabel = new Label { Location = new Point(260, y + 4), Size = new Size(96, 22), TextAlign = ContentAlignment.MiddleRight, Font = new Font("Segoe UI", 9f, FontStyle.Bold) };
+        var title = new Label { Text = "GazeStick", Font = new Font("Segoe UI", 16f, FontStyle.Bold), ForeColor = Color.White, Location = new Point(16, y), AutoSize = true };
+        _statusLabel = new Label { Location = new Point(260, y + 4), Size = new Size(96, 22), TextAlign = ContentAlignment.MiddleRight, Font = new Font("Segoe UI", 10f, FontStyle.Bold) };
         y += 32;
-        _beamStatusLabel = new Label { Location = new Point(16, y), Size = new Size(340, 20), Font = new Font("Segoe UI", 9f), TextAlign = ContentAlignment.MiddleLeft };
+        _beamStatusLabel = new Label { Location = new Point(16, y), Size = new Size(340, 20), Font = new Font("Segoe UI", 10f), TextAlign = ContentAlignment.MiddleLeft };
         y += 28;
 
         _toggleButton = CreateButton("Tracking: ON", new Point(16, y), new Size(340, 40), Color.FromArgb(35, 100, 45));
@@ -140,8 +195,21 @@ public sealed class PopupPanel : Form
 
         // Display selection: pick which monitor's bounds define the viewport
         // (and therefore the stick neutral point). Empty/primary by default.
-        var displayTitle = new Label { Text = "Target display", Location = new Point(16, y), Size = new Size(340, 18), Font = new Font("Segoe UI", 9f, FontStyle.Bold), ForeColor = Color.FromArgb(220, 220, 225) };
-        _displayCombo = new ComboBox { Location = new Point(16, y + 18), Width = 340, DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Segoe UI", 9f), AccessibleName = "Target display" };
+        var displayTitle = new Label { Text = "Target display", Location = new Point(16, y), Size = new Size(340, 18), Font = new Font("Segoe UI", 10f, FontStyle.Bold), ForeColor = Color.FromArgb(220, 220, 225) };
+        _displayCombo = new ComboBox { Location = new Point(16, y + 18), Width = 340, DropDownStyle = ComboBoxStyle.DropDownList, DrawMode = DrawMode.OwnerDrawFixed, Font = new Font("Segoe UI", 10f), AccessibleName = "Target display" };
+        // DropDownList combo boxes draw their dropped-down list with the light system
+        // theme regardless of BackColor; owner-drawing both states keeps the whole
+        // control (closed field + open list) dark like the rest of the panel.
+        _displayCombo.DrawItem += (_, e) =>
+        {
+            if (e.Index < 0 || e.Index >= _displayCombo.Items.Count) return;
+            bool selected = e.Index == _displayCombo.SelectedIndex;
+            using var bg = new SolidBrush(selected ? Color.FromArgb(65, 130, 80) : Color.FromArgb(45, 45, 50));
+            e.Graphics.FillRectangle(bg, e.Bounds);
+            TextRenderer.DrawText(e.Graphics, _displayCombo.Items[e.Index]?.ToString() ?? string.Empty, _displayCombo.Font, e.Bounds,
+                selected ? Color.White : Color.FromArgb(230, 230, 235),
+                TextFormatFlags.VerticalCenter | TextFormatFlags.Left);
+        };
         PopulateDisplayCombo("");
         _displayCombo.SelectedIndexChanged += (_, _) =>
         {
@@ -177,7 +245,7 @@ public sealed class PopupPanel : Form
         _ds4Button.Click += (_, _) => SelectOutput(OutputType.DualShock4);
         Controls.AddRange(new Control[] { _xboxButton, _ds4Button });
         y += 36;
-        var outputHint = new Label { Text = "DualShock 4 mode does not use an XInput controller slot.", Location = new Point(16, y), Size = new Size(340, 18), ForeColor = Color.FromArgb(180, 180, 185), Font = new Font("Segoe UI", 8f) };
+        var outputHint = new Label { Text = "DualShock 4 mode does not use an XInput controller slot.", Location = new Point(16, y), Size = new Size(340, 18), ForeColor = Color.FromArgb(180, 180, 185), Font = new Font("Segoe UI", 9f) };
         Controls.Add(outputHint);
         y += 26;
 
@@ -193,7 +261,7 @@ public sealed class PopupPanel : Form
         Controls.AddRange(new Control[] { _invertYButton, _hotkeyButton, _autoStartButton });
         y += 40;
 
-        _settingsNotice = new Label { Location = new Point(16, y), Size = new Size(340, 18), ForeColor = Color.FromArgb(130, 220, 150), Font = new Font("Segoe UI", 8f, FontStyle.Bold), TextAlign = ContentAlignment.MiddleCenter, Visible = false };
+        _settingsNotice = new Label { Location = new Point(16, y), Size = new Size(340, 18), ForeColor = Color.FromArgb(130, 220, 150), Font = new Font("Segoe UI", 9f, FontStyle.Bold), TextAlign = ContentAlignment.MiddleCenter, Visible = false };
         Controls.Add(_settingsNotice);
         y += 24;
 
@@ -208,13 +276,13 @@ public sealed class PopupPanel : Form
 
     private void AddSectionLabel(string text, ref int y)
     {
-        Controls.Add(new Label { Text = text.ToUpperInvariant(), Location = new Point(16, y), Size = new Size(340, 20), Font = new Font("Segoe UI", 8f, FontStyle.Bold), ForeColor = Color.FromArgb(120, 190, 145) });
+        Controls.Add(new Label { Text = text.ToUpperInvariant(), Location = new Point(16, y), Size = new Size(340, 20), Font = new Font("Segoe UI", 9f, FontStyle.Bold), ForeColor = Color.FromArgb(120, 190, 145) });
         y += 22;
     }
 
     private NumericAdjuster AddAdjuster(string label, string hint, double value, double min, double max, double step, int decimals, ref int y)
     {
-        var title = new Label { Text = label, Location = new Point(16, y), Size = new Size(340, 18), Font = new Font("Segoe UI", 9f, FontStyle.Bold), ForeColor = Color.FromArgb(220, 220, 225) };
+        var title = new Label { Text = label, Location = new Point(16, y), Size = new Size(340, 18), Font = new Font("Segoe UI", 10f, FontStyle.Bold), ForeColor = Color.FromArgb(220, 220, 225) };
         var control = new NumericAdjuster { Location = new Point(16, y + 18), Width = 340, AccessibleName = label, AccessibleDescription = hint };
         control.Initialize(value, min, max, step, decimals);
         Controls.AddRange(new Control[] { title, control });
@@ -224,7 +292,7 @@ public sealed class PopupPanel : Form
 
     private static Button CreateButton(string text, Point location, Size size, Color color)
     {
-        var button = new Button { Text = text, Location = location, Size = size, FlatStyle = FlatStyle.Flat, BackColor = color, ForeColor = Color.White, Font = new Font("Segoe UI", 9f, FontStyle.Bold), Cursor = Cursors.Hand, TabStop = true };
+        var button = new Button { Text = text, Location = location, Size = size, FlatStyle = FlatStyle.Flat, BackColor = color, ForeColor = Color.White, Font = new Font("Segoe UI", 10f, FontStyle.Bold), Cursor = Cursors.Hand, TabStop = true };
         button.FlatAppearance.BorderColor = Color.FromArgb(95, 95, 100);
         button.FlatAppearance.MouseOverBackColor = Color.FromArgb(Math.Min(color.R + 20, 255), Math.Min(color.G + 20, 255), Math.Min(color.B + 20, 255));
         return button;

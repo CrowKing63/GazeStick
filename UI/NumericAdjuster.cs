@@ -76,7 +76,7 @@ public class NumericAdjuster : UserControl
             Text = "0.00",
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleCenter,
-            Font = new Font("Segoe UI", 10f, FontStyle.Regular),
+            Font = new Font("Segoe UI", 11f, FontStyle.Regular),
             ForeColor = Color.White,
             BackColor = Color.Transparent,
             Cursor = Cursors.SizeWE,

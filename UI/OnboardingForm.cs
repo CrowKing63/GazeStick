@@ -8,9 +8,52 @@ public sealed class OnboardingForm : Form
     private readonly CheckBox _chkDontShow;
     public bool DontShowAgain => _chkDontShow.Checked;
 
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern int GetDpiForWindow(IntPtr hwnd);
+
+    private bool _scaled;
+
+    protected override void OnShown(EventArgs e)
+    {
+        base.OnShown(e);
+        if (_scaled) return;
+        _scaled = true;
+        ScaleLayout();
+    }
+
+    /// <summary>
+    /// Scales every control's location and size (and the form size) by the display
+    /// DPI relative to the 96 dpi design baseline, matching PopupPanel. WinForms'
+    /// PMv2 awareness already auto-scales fonts, so scaling the fixed pixel layout
+    /// by the same factor keeps window, margins, and text growing together.
+    /// </summary>
+    private void ScaleLayout()
+    {
+        float scale = 1f;
+        try
+        {
+            int dpi = GetDpiForWindow(Handle);
+            if (dpi > 0)
+                scale = dpi / 96f;
+        }
+        catch { }
+
+        if (Math.Abs(scale - 1f) < 0.001f) return;
+
+        Size = new Size((int)Math.Round(Size.Width * scale), (int)Math.Round(Size.Height * scale));
+        foreach (Control c in Controls)
+        {
+            c.Location = new Point((int)Math.Round(c.Location.X * scale), (int)Math.Round(c.Location.Y * scale));
+            c.Size = new Size((int)Math.Round(c.Size.Width * scale), (int)Math.Round(c.Size.Height * scale));
+        }
+    }
+
     public OnboardingForm()
     {
         Text = "Welcome to GazeStick";
+        // We scale the layout ourselves (see ScaleLayout) so AutoScaleMode stays None,
+        // matching PopupPanel.
+        AutoScaleMode = AutoScaleMode.None;
         Size = new Size(436, 300);
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedDialog;

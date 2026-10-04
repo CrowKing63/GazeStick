@@ -343,14 +343,6 @@ public sealed class TrayApplicationContext : ApplicationContext
                 _hotkey?.Register(key, ToggleActive);
         };
 
-        var cursorPos = Cursor.Position;
-        var screen = Screen.FromPoint(cursorPos).WorkingArea;
-        int x = cursorPos.X - _popup.Width / 2;
-        int y = cursorPos.Y - _popup.Height - 10;
-        x = Math.Clamp(x, screen.Left, screen.Right - _popup.Width);
-        y = Math.Max(y, screen.Top);
-        _popup.Location = new Point(x, y);
-
         _popup.TopMost = true;
         _popup.Show();
         _popup.BringToFront();
