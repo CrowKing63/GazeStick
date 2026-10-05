@@ -204,24 +204,60 @@ public sealed class BeamTrackingService : ITrackingService
             // handle, then Start() re-runs the exact same initialization path
             // used at app startup (fresh geometry read, new API creation,
             // timer setup). This reproduces "app restart" behaviour without
-            // actually restarting the process, so a monitor hot-swap or
-            // resolution/scale change always lands in a clean state.
+            // actually restarting the process.
             Stop();
             Start();
 
             ViewportChanged?.Invoke(_currentGeometry);
 
-            // Virtual displays (e.g. Sunshine) can still be settling a few
-            // seconds after WM_DISPLAYCHANGE: the resolution we just read may
-            // not be the final one. Schedule one verification pass and let it
-            // re-apply if the driver reports a different size by then.
+            // Virtual displays (e.g. Sunshine) take 5-10 seconds to settle on
+            // their final resolution after WM_DISPLAYCHANGE. A single verify at
+            // 4 s is not enough. Schedule repeated checks every 2 s for up to
+            // 10 s, stopping early if the geometry stops changing.
             _verifyTimer?.Dispose();
-            _verifyTimer = new System.Threading.Timer((object? _) => CheckGeometryChange(), null, 4000, Timeout.Infinite);
+            _verifyTimer = new System.Threading.Timer((object? _) => VerifySettling(0), null, 2000, Timeout.Infinite);
         }
         catch (ObjectDisposedException) { }
         catch (Exception ex)
         {
             ErrorOccurred?.Invoke($"Viewport geometry update failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Repeatedly re-checks the display geometry every 2 s for up to 10 s
+    /// (5 passes). If the geometry changes between passes, re-applies the full
+    /// Stop/Start re-init and continues checking. Stops when the geometry is
+    /// stable or the budget is exhausted.
+    /// </summary>
+    private void VerifySettling(int pass)
+    {
+        if (_disposed) return;
+
+        const int MaxPasses = 5; // 5 × 2 s = 10 s total window
+
+        if (pass >= MaxPasses) return;
+
+        try
+        {
+            var geom = ComputeViewportGeometry(ResolveTargetDisplay(_targetDisplay));
+            if (!GeometriesEqual(geom, _currentGeometry))
+            {
+                // Geometry changed since last read — driver settled on a new value.
+                _currentGeometry = geom;
+                Stop();
+                Start();
+                ViewportChanged?.Invoke(_currentGeometry);
+            }
+
+            // Schedule the next check if we still have budget.
+            _verifyTimer?.Dispose();
+            _verifyTimer = new System.Threading.Timer((object? _) => VerifySettling(pass + 1), null, 2000, Timeout.Infinite);
+        }
+        catch (ObjectDisposedException) { }
+        catch (Exception ex)
+        {
+            ErrorOccurred?.Invoke($"Geometry verify failed: {ex.Message}");
         }
     }
 
