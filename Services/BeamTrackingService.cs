@@ -98,9 +98,9 @@ public sealed class BeamTrackingService : ITrackingService
             var geom = ComputeViewportGeometry(ResolveTargetDisplay(_targetDisplay));
             _currentGeometry = geom;
 
-            _api = new API("GazeStick", geom);
+            RecreateApi(geom);
 
-            var status = _api.GetTrackingDataReceptionStatus();
+            var status = _api!.GetTrackingDataReceptionStatus();
             SetConnected(status == TrackingDataReceptionStatus.ReceivingTrackingData);
 
             _pollTimer = new System.Threading.Timer(PollGaze, null, 0, 16);
@@ -136,6 +136,20 @@ public sealed class BeamTrackingService : ITrackingService
         _api = null;
 
         SetConnected(false);
+    }
+
+    /// <summary>
+    /// Disposes the existing Beam SDK handle and creates a fresh one with the
+    /// supplied viewport geometry. This is the same initialization path the app
+    /// takes on startup (new API created against the current display bounds), so
+    /// a monitor hot-swap re-runs exactly that path instead of relying on an
+    /// in-place UpdateViewportGeometry call that leaves stale internal state.
+    /// </summary>
+    private void RecreateApi(ViewportGeometry geom)
+    {
+        _api?.Dispose();
+        _api = null;
+        _api = new API("GazeStick", geom);
     }
 
     // Geometry change detection & update
@@ -182,20 +196,18 @@ public sealed class BeamTrackingService : ITrackingService
 
     private void ApplyPendingUpdate()
     {
-        if (_disposed || _api == null) return;
+        if (_disposed) return;
 
         try
         {
-            var geom = ComputeViewportGeometry(ResolveTargetDisplay(_targetDisplay));
-            if (!GeometriesEqual(geom, _currentGeometry))
-                _currentGeometry = geom;
-
-            // Only call the SDK when connected; otherwise the cached geometry is
-            // used on the next Start().
-            if (_isConnected)
-            {
-                _api.UpdateViewportGeometry(_currentGeometry);
-            }
+            // Full re-initialization: Stop() disposes all timers and the SDK
+            // handle, then Start() re-runs the exact same initialization path
+            // used at app startup (fresh geometry read, new API creation,
+            // timer setup). This reproduces "app restart" behaviour without
+            // actually restarting the process, so a monitor hot-swap or
+            // resolution/scale change always lands in a clean state.
+            Stop();
+            Start();
 
             ViewportChanged?.Invoke(_currentGeometry);
 
