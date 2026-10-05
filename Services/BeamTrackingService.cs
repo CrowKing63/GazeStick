@@ -16,6 +16,7 @@ public sealed class BeamTrackingService : ITrackingService
 
     private ViewportGeometry _currentGeometry;
     private string _targetDisplay = "";
+    private System.Threading.Timer? _verifyTimer;
 
     public event Action<GazePoint>? GazeReceived;
     public event Action<bool>? ConnectionChanged;
@@ -128,6 +129,9 @@ public sealed class BeamTrackingService : ITrackingService
         _debounceTimer?.Dispose();
         _debounceTimer = null;
 
+        _verifyTimer?.Dispose();
+        _verifyTimer = null;
+
         _api?.Dispose();
         _api = null;
 
@@ -162,9 +166,12 @@ public sealed class BeamTrackingService : ITrackingService
 
         _currentGeometry = newGeom;
 
-        // Restart the 500 ms debounce.
+        // Debounce: wait for virtual-display drivers to settle on their final
+        // resolution before applying geometry. Some virtual displays (e.g.
+        // Sunshine) report an intermediate resolution right after
+        // WM_DISPLAYCHANGE and only reach the real 4K a second or two later.
         _debounceTimer?.Dispose();
-        _debounceTimer = new System.Threading.Timer((object? _) => ApplyPendingUpdate(), null, 500, Timeout.Infinite);
+        _debounceTimer = new System.Threading.Timer((object? _) => ApplyPendingUpdate(), null, 2500, Timeout.Infinite);
     }
 
     private void CheckGeometryChange()
@@ -191,6 +198,13 @@ public sealed class BeamTrackingService : ITrackingService
             }
 
             ViewportChanged?.Invoke(_currentGeometry);
+
+            // Virtual displays (e.g. Sunshine) can still be settling a few
+            // seconds after WM_DISPLAYCHANGE: the resolution we just read may
+            // not be the final one. Schedule one verification pass and let it
+            // re-apply if the driver reports a different size by then.
+            _verifyTimer?.Dispose();
+            _verifyTimer = new System.Threading.Timer((object? _) => CheckGeometryChange(), null, 4000, Timeout.Infinite);
         }
         catch (ObjectDisposedException) { }
         catch (Exception ex)
