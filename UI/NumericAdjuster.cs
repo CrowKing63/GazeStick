@@ -162,12 +162,24 @@ public class NumericAdjuster : UserControl
 
     private void UpdateLayout()
     {
-        const int buttonWidth = 40;
-        const int gap = 4;
-        _btnMinus.Location = new Point(0, 2);
-        _btnPlus.Location = new Point(Math.Max(buttonWidth + gap, Width - buttonWidth), 2);
-        _valuePanel.Location = new Point(buttonWidth + gap, 2);
-        _valuePanel.Size = new Size(Math.Max(40, Width - (buttonWidth * 2) - (gap * 2)), 32);
+        // Scale the inner controls by the display DPI so they grow with the fonts that
+        // WinForms' PMv2 awareness auto-scales. Called from Resize, which PopupPanel
+        // triggers when it scales this control's size in OnShown — at that point
+        // DeviceDpi is reliable. Without this the fixed-height +/- buttons keep their
+        // design height while the 12pt font grows, so the text loses its bottom margin
+        // as the display scale rises.
+        float s = DeviceDpi / 96f;
+        int buttonWidth = (int)Math.Round(40 * s);
+        int gap = (int)Math.Round(4 * s);
+        int rowHeight = (int)Math.Round(32 * s);
+        int topOffset = (int)Math.Round(2 * s);
+
+        _btnMinus.Size = new Size(buttonWidth, rowHeight);
+        _btnMinus.Location = new Point(0, topOffset);
+        _btnPlus.Size = new Size(buttonWidth, rowHeight);
+        _btnPlus.Location = new Point(Math.Max(buttonWidth + gap, Width - buttonWidth), topOffset);
+        _valuePanel.Location = new Point(buttonWidth + gap, topOffset);
+        _valuePanel.Size = new Size(Math.Max((int)Math.Round(40 * s), Width - (buttonWidth * 2) - (gap * 2)), rowHeight);
     }
 
     public void SetEnabledState(bool enabled)

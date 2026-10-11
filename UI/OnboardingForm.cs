@@ -8,17 +8,15 @@ public sealed class OnboardingForm : Form
     private readonly CheckBox _chkDontShow;
     public bool DontShowAgain => _chkDontShow.Checked;
 
-    [System.Runtime.InteropServices.DllImport("user32.dll")]
-    private static extern int GetDpiForWindow(IntPtr hwnd);
-
-    private bool _scaled;
+    private readonly Dictionary<Control, (Point Loc, Size Sz)> _designLayout = new();
+    private Size _designSize;
 
     protected override void OnShown(EventArgs e)
     {
         base.OnShown(e);
-        if (_scaled) return;
-        _scaled = true;
-        ScaleLayout();
+        // Scale the layout now that DeviceDpi is reliable (PMv2 applies the window's
+        // DPI before OnShown). OnDpiChanged handles subsequent changes (monitor moves).
+        ApplyScale(DeviceDpi / 96f);
     }
 
     /// <summary>
@@ -27,25 +25,37 @@ public sealed class OnboardingForm : Form
     /// PMv2 awareness already auto-scales fonts, so scaling the fixed pixel layout
     /// by the same factor keeps window, margins, and text growing together.
     /// </summary>
-    private void ScaleLayout()
+    private void ApplyScale(float scale)
     {
-        float scale = 1f;
-        try
-        {
-            int dpi = GetDpiForWindow(Handle);
-            if (dpi > 0)
-                scale = dpi / 96f;
-        }
-        catch { }
-
         if (Math.Abs(scale - 1f) < 0.001f) return;
 
-        Size = new Size((int)Math.Round(Size.Width * scale), (int)Math.Round(Size.Height * scale));
-        foreach (Control c in Controls)
+        // Restore the design baseline first so a repeated DPI change never compounds.
+        Size = _designSize;
+        foreach (var kv in _designLayout)
         {
-            c.Location = new Point((int)Math.Round(c.Location.X * scale), (int)Math.Round(c.Location.Y * scale));
-            c.Size = new Size((int)Math.Round(c.Size.Width * scale), (int)Math.Round(c.Size.Height * scale));
+            kv.Key.Location = kv.Value.Loc;
+            kv.Key.Size = kv.Value.Sz;
         }
+
+        Size = new Size((int)Math.Round(_designSize.Width * scale), (int)Math.Round(_designSize.Height * scale));
+        foreach (var kv in _designLayout)
+        {
+            kv.Key.Location = new Point((int)Math.Round(kv.Value.Loc.X * scale), (int)Math.Round(kv.Value.Loc.Y * scale));
+            kv.Key.Size = new Size((int)Math.Round(kv.Value.Sz.Width * scale), (int)Math.Round(kv.Value.Sz.Height * scale));
+        }
+    }
+
+    protected override void OnDpiChanged(DpiChangedEventArgs e)
+    {
+        base.OnDpiChanged(e);
+        ApplyScale(e.DeviceDpiNew / 96f);
+    }
+
+    private void CaptureDesignLayout()
+    {
+        _designSize = Size;
+        foreach (Control c in Controls)
+            _designLayout[c] = (c.Location, c.Size);
     }
 
     public OnboardingForm()
@@ -111,5 +121,6 @@ public sealed class OnboardingForm : Form
         gotIt.Click += (_, _) => Close();
 
         Controls.AddRange(new Control[] { title, body, _chkDontShow, gotIt });
+        CaptureDesignLayout();
     }
 }
