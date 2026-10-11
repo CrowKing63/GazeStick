@@ -32,6 +32,10 @@ GazeStick receives local gaze data from the [Beam Eye Tracker](https://beam.eyew
 
 Change the output mode from the tray popup. GazeStick immediately disconnects the old virtual controller, then connects the selected one in a neutral state.
 
+## Presets
+
+The popup offers three presets (Preset 1 is selected by default). Each preset stores the six adjustable values: Deadzone, Sensitivity, Smoothing, Blink clamp, Curve type, and Curve power. Selecting a preset loads its saved values into the controls; editing any value while a preset is active writes it straight back to that preset in real time—there is no separate save button. All three presets start from the stock defaults, and upgrading from an older settings file seeds your existing values into Preset 1 so they are not lost.
+
 ## Setup and usage
 
 1. Install ViGEmBus and restart if prompted.
@@ -70,6 +74,8 @@ Settings are saved to `%AppData%\GazeStick\settings.json`.
 | `outputType` | `Xbox360` | Virtual-controller output mode. |
 | `invertY` | false | Invert vertical camera output. |
 | `toggleHotkey` | `F9` | Global tracking-toggle hotkey. |
+| `curveType` | `Linear` | Response curve shape (`Linear`, `Exponential`, `Sigmoid`). See [Presets](#presets). |
+| `curvePower` | 2.0 | Exponent for the `Exponential` and `Sigmoid` curves (1.0–5.0). |
 | `targetDisplay` | `""` (primary) | Device name of the display whose bounds define the viewport and stick neutral point (e.g. `\\.\DISPLAY1`). Empty uses the primary screen; a missing key in older settings files loads as empty. |
 
 ## Designed for combination
