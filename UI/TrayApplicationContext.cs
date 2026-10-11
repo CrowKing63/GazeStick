@@ -306,7 +306,6 @@ public sealed class TrayApplicationContext : ApplicationContext
             {
                 _settings.StartWithWindows = v;
                 SettingsManager.Save(_settings);
-                _popup.ShowSettingsNotice(v ? "Start with Windows enabled." : "Start with Windows disabled.");
             }
             else
             {
@@ -434,7 +433,6 @@ public sealed class TrayApplicationContext : ApplicationContext
             _popup.HotkeyText = _settings.ToggleHotkey;
             _popup.SetTargetDisplay(_settings.TargetDisplay);
             _popup.PresetIndex = _settings.ActivePreset;
-            _popup.ShowSettingsNotice("All settings restored to defaults.");
         }
     }
 

@@ -23,7 +23,6 @@ public sealed class PopupPanel : Form
 #pragma warning disable CS0649
     private readonly ComboBox? _displayCombo;
 #pragma warning restore CS0649
-    private readonly Label _settingsNotice;
     private readonly Button[] _presetButtons;
     private int _presetIndex;
     private bool _isActive;
@@ -185,12 +184,6 @@ public sealed class PopupPanel : Form
         Location = new Point(x, y);
     }
 
-    public void ShowSettingsNotice(string message)
-    {
-        _settingsNotice.Text = message;
-        _settingsNotice.Visible = true;
-    }
-
     public PopupPanel()
     {
         FormBorderStyle = FormBorderStyle.FixedSingle;
@@ -318,10 +311,6 @@ public sealed class PopupPanel : Form
         reset.Click += (_, _) => ResetRequested?.Invoke();
         exit.Click += (_, _) => ExitRequested?.Invoke();
         Controls.AddRange(new Control[] { reset, exit });
-        y += 36;
-
-        _settingsNotice = new Label { Location = new Point(16, y), Size = new Size(340, 18), ForeColor = Color.FromArgb(130, 220, 150), Font = new Font("Segoe UI", 9f, FontStyle.Bold), TextAlign = ContentAlignment.MiddleCenter, Visible = false };
-        Controls.Add(_settingsNotice);
 
         CaptureDesignLayout();
         UpdateState();
