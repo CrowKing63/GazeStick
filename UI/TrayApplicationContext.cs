@@ -290,14 +290,16 @@ public sealed class TrayApplicationContext : ApplicationContext
         };
 
         _popup.SetTargetDisplay(_settings.TargetDisplay);
+        _popup.PresetIndex = _settings.ActivePreset;
 
-        _popup.DeadzoneChanged += v => { _settings.Deadzone = v; SettingsManager.Save(_settings); };
-        _popup.SensitivityChanged += v => { _settings.Sensitivity = v; SettingsManager.Save(_settings); };
-        _popup.SmoothingChanged += v => { _settings.Smoothing = v; SettingsManager.Save(_settings); };
-        _popup.BlinkClampChanged += v => { _settings.BlinkClampThreshold = v; SettingsManager.Save(_settings); };
+        _popup.DeadzoneChanged += v => { SettingsManager.UpdateValue(_settings, "deadzone", v); SettingsManager.Save(_settings); };
+        _popup.SensitivityChanged += v => { SettingsManager.UpdateValue(_settings, "sensitivity", v); SettingsManager.Save(_settings); };
+        _popup.SmoothingChanged += v => { SettingsManager.UpdateValue(_settings, "smoothing", v); SettingsManager.Save(_settings); };
+        _popup.BlinkClampChanged += v => { SettingsManager.UpdateValue(_settings, "blinkclamp", v); SettingsManager.Save(_settings); };
         _popup.InvertYChanged += v => { _settings.InvertY = v; SettingsManager.Save(_settings); };
-        _popup.CurveTypeChanged += v => { _settings.Curve = v; SettingsManager.Save(_settings); };
-        _popup.CurvePowerChanged += v => { _settings.CurvePower = v; SettingsManager.Save(_settings); };
+        _popup.CurveTypeChanged += v => { SettingsManager.UpdateCurve(_settings, v); SettingsManager.Save(_settings); };
+        _popup.CurvePowerChanged += v => { SettingsManager.UpdateValue(_settings, "curvepower", v); SettingsManager.Save(_settings); };
+        _popup.PresetChanged += i => ApplyPreset(i);
         _popup.AutoStartChanged += v =>
         {
             if (AutoStartManager.SetEnabled(v))
@@ -349,6 +351,25 @@ public sealed class TrayApplicationContext : ApplicationContext
         _popup.Activate();
     }
 
+    private void ApplyPreset(int index)
+    {
+        index = Math.Clamp(index, 0, 2);
+        SettingsManager.ApplyPreset(_settings, index);
+        SettingsManager.Save(_settings);
+
+        // Reflect the preset's values in the popup controls. The Value setters do
+        // not fire ValueChanged, so no re-save loop is triggered.
+        if (_popup != null && !_popup.IsDisposed)
+        {
+            _popup.DeadzoneValue = _settings.Deadzone;
+            _popup.SensitivityValue = _settings.Sensitivity;
+            _popup.SmoothingValue = _settings.Smoothing;
+            _popup.BlinkClampValue = _settings.BlinkClampThreshold;
+            _popup.Curve = _settings.Curve;
+            _popup.CurvePower = _settings.CurvePower;
+        }
+    }
+
     private void ResetSettings()
     {
         if (_popup != null && !_popup.IsDisposed)
@@ -374,6 +395,10 @@ public sealed class TrayApplicationContext : ApplicationContext
         _settings.StartActive = true;
         _settings.StartWithWindows = false;
         _settings.TargetDisplay = "";
+        // Reset all three presets to stock values and return to preset 1.
+        for (int i = 0; i < _settings.Presets.Length; i++)
+            _settings.Presets[i] = new Preset();
+        _settings.ActivePreset = 0;
         _tracker.TargetDisplay = "";
         if (!_pad.SetOutputType(OutputType.Xbox360))
         {
@@ -408,6 +433,7 @@ public sealed class TrayApplicationContext : ApplicationContext
             _popup.OutputType = _settings.OutputType;
             _popup.HotkeyText = _settings.ToggleHotkey;
             _popup.SetTargetDisplay(_settings.TargetDisplay);
+            _popup.PresetIndex = _settings.ActivePreset;
             _popup.ShowSettingsNotice("All settings restored to defaults.");
         }
     }

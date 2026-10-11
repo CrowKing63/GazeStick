@@ -20,8 +20,12 @@ public sealed class PopupPanel : Form
     private readonly Button _hotkeyButton;
     private readonly Button _autoStartButton;
     private readonly Button _curveButton;
-    private readonly ComboBox _displayCombo;
+#pragma warning disable CS0649
+    private readonly ComboBox? _displayCombo;
+#pragma warning restore CS0649
     private readonly Label _settingsNotice;
+    private readonly Button[] _presetButtons;
+    private int _presetIndex;
     private bool _isActive;
     private bool _isBeamConnected;
     private bool _awaitingHotkey;
@@ -41,7 +45,11 @@ public sealed class PopupPanel : Form
     public event Action<double>? CurvePowerChanged;
     public event Action<bool>? AutoStartChanged;
     public event Action<OutputType>? OutputTypeChanged;
+    // Kept for future restoration of the target display picker (currently hidden).
+#pragma warning disable CS0067
     public event Action<string>? TargetDisplayChanged;
+#pragma warning restore CS0067
+    public event Action<int>? PresetChanged;
     public event Action? ResetRequested;
     public event Action? ExitRequested;
 
@@ -57,6 +65,15 @@ public sealed class PopupPanel : Form
     public double SensitivityValue { set => _sensitivityControl.Value = value; }
     public double SmoothingValue { set => _smoothingControl.Value = value; }
     public double BlinkClampValue { set => _blinkClampControl.Value = value; }
+    /// <summary>
+    /// Sets the highlighted preset button without firing PresetChanged (used on
+    /// initial load and after a reset), mirroring SetTargetDisplay.
+    /// </summary>
+    public int PresetIndex
+    {
+        set => _presetIndex = Math.Clamp(value, 0, 2);
+        get => _presetIndex;
+    }
     public bool SuppressAutoClose { get; set; }
 
     /// <summary>
@@ -76,6 +93,8 @@ public sealed class PopupPanel : Form
         }
     }
 
+    // Kept for future restoration of the target display picker (currently hidden).
+#pragma warning disable CS8602
     private void PopulateDisplayCombo(string selectedDeviceName)
     {
         var items = new List<DisplayEntry>
@@ -89,12 +108,13 @@ public sealed class PopupPanel : Form
             items.Add(new DisplayEntry(s.DeviceName, label));
         }
 
-        _displayCombo.Items.Clear();
+        _displayCombo!.Items.Clear();
         foreach (var e in items)
-            _displayCombo.Items.Add(e);
+            _displayCombo!.Items.Add(e);
 
         SetTargetDisplay(selectedDeviceName);
     }
+#pragma warning restore CS8602
 
     private sealed record DisplayEntry(string DeviceName, string Label)
     {
@@ -179,7 +199,7 @@ public sealed class PopupPanel : Form
         // WinForms' PMv2 awareness already auto-scales fonts, and letting it also
         // scale this fixed pixel layout would double-scale and fight Minimum/MaximumSize.
         AutoScaleMode = AutoScaleMode.None;
-        Size = new Size(392, 920);
+        Size = new Size(392, 650);
         BackColor = Color.FromArgb(28, 28, 30);
         ForeColor = Color.White;
         ShowInTaskbar = false;
@@ -202,50 +222,74 @@ public sealed class PopupPanel : Form
         y += 54;
 
         Controls.AddRange(new Control[] { title, _statusLabel, _beamStatusLabel, _toggleButton });
-        AddSectionLabel("Tracking", ref y);
 
-        // Display selection: pick which monitor's bounds define the viewport
-        // (and therefore the stick neutral point). Empty/primary by default.
-        var displayTitle = new Label { Text = "Target display", Location = new Point(16, y), Size = new Size(340, 18), Font = new Font("Segoe UI", 10f, FontStyle.Bold), ForeColor = Color.FromArgb(220, 220, 225) };
-        _displayCombo = new ComboBox { Location = new Point(16, y + 18), Width = 340, DropDownStyle = ComboBoxStyle.DropDownList, DrawMode = DrawMode.OwnerDrawFixed, Font = new Font("Segoe UI", 10f), AccessibleName = "Target display" };
-        // DropDownList combo boxes draw their dropped-down list with the light system
-        // theme regardless of BackColor; owner-drawing both states keeps the whole
-        // control (closed field + open list) dark like the rest of the panel.
-        _displayCombo.DrawItem += (_, e) =>
+        // Target display selection is hidden: in practice the monitor Beam tracks
+        // is always the Windows primary, so a separate picker only adds confusion.
+        // Keep the field and SetTargetDisplay for future restoration if a
+        // non-primary Beam target becomes necessary.
+        // var displayTitle = new Label { Text = "Target display", Location = new Point(16, y), Size = new Size(340, 18), Font = new Font("Segoe UI", 10f, FontStyle.Bold), ForeColor = Color.FromArgb(220, 220, 225) };
+        // _displayCombo = new ComboBox { Location = new Point(16, y + 18), Width = 340, DropDownStyle = ComboBoxStyle.DropDownList, DrawMode = DrawMode.OwnerDrawFixed, Font = new Font("Segoe UI", 10f), AccessibleName = "Target display" };
+        // _displayCombo.DrawItem += (_, e) =>
+        // {
+        //     if (e.Index < 0 || e.Index >= _displayCombo.Items.Count) return;
+        //     bool selected = e.Index == _displayCombo.SelectedIndex;
+        //     using var bg = new SolidBrush(selected ? Color.FromArgb(65, 130, 80) : Color.FromArgb(45, 45, 50));
+        //     e.Graphics.FillRectangle(bg, e.Bounds);
+        //     TextRenderer.DrawText(e.Graphics, _displayCombo.Items[e.Index]?.ToString() ?? string.Empty, _displayCombo.Font, e.Bounds,
+        //         selected ? Color.White : Color.FromArgb(230, 230, 235),
+        //         TextFormatFlags.VerticalCenter | TextFormatFlags.Left);
+        // };
+        // PopulateDisplayCombo("");
+        // _displayCombo.SelectedIndexChanged += (_, _) =>
+        // {
+        //     if (_displayCombo.SelectedItem is string deviceName)
+        //         TargetDisplayChanged?.Invoke(deviceName);
+        // };
+        // Controls.AddRange(new Control[] { displayTitle, _displayCombo });
+        // y += 62;
+
+        // Presets: three buttons that save/restore the six adjustable values. The
+        // active preset is highlighted with the same green as the selected output.
+        AddSectionLabel("Presets", ref y);
+        _presetButtons = new Button[3];
+        for (int i = 0; i < 3; i++)
         {
-            if (e.Index < 0 || e.Index >= _displayCombo.Items.Count) return;
-            bool selected = e.Index == _displayCombo.SelectedIndex;
-            using var bg = new SolidBrush(selected ? Color.FromArgb(65, 130, 80) : Color.FromArgb(45, 45, 50));
-            e.Graphics.FillRectangle(bg, e.Bounds);
-            TextRenderer.DrawText(e.Graphics, _displayCombo.Items[e.Index]?.ToString() ?? string.Empty, _displayCombo.Font, e.Bounds,
-                selected ? Color.White : Color.FromArgb(230, 230, 235),
-                TextFormatFlags.VerticalCenter | TextFormatFlags.Left);
-        };
-        PopulateDisplayCombo("");
-        _displayCombo.SelectedIndexChanged += (_, _) =>
-        {
-            if (_displayCombo.SelectedItem is string deviceName)
-                TargetDisplayChanged?.Invoke(deviceName);
-        };
-        Controls.AddRange(new Control[] { displayTitle, _displayCombo });
+            int idx = i;
+            var b = CreateButton($"Preset {i + 1}", new Point(16 + i * 116, y), new Size(108, 32), Color.FromArgb(45, 45, 50));
+            b.AccessibleName = $"Select preset {i + 1}";
+            b.Click += (_, _) => SelectPreset(idx);
+            _presetButtons[i] = b;
+        }
+        Controls.AddRange(_presetButtons);
+        y += 36;
+
+        // Adjustable values in a two-column grid to halve the vertical footprint:
+        // each row holds one left (x=16) and one right (x=192) adjuster at the same y,
+        // so four adjusters occupy two rows instead of four.
+        _deadzoneControl = AddAdjusterAt("Deadzone", "Neutral radius before stick output begins.", 0.10, 0.0, 0.50, 0.01, 2, 0, y);
+        _sensitivityControl = AddAdjusterAt("Sensitivity", "How far you look for full stick deflection.", 2.0, 0.1, 5.0, 0.1, 1, 1, y);
+        _deadzoneControl.ValueChanged += value => DeadzoneChanged?.Invoke(value);
+        _sensitivityControl.ValueChanged += value => SensitivityChanged?.Invoke(value);
         y += 62;
 
-        _deadzoneControl = AddAdjuster("Deadzone", "Neutral radius before stick output begins.", 0.10, 0.0, 0.50, 0.01, 2, ref y);
-        _deadzoneControl.ValueChanged += value => DeadzoneChanged?.Invoke(value);
-        _sensitivityControl = AddAdjuster("Sensitivity", "How far you look for full stick deflection.", 2.0, 0.1, 5.0, 0.1, 1, ref y);
-        _sensitivityControl.ValueChanged += value => SensitivityChanged?.Invoke(value);
-        _smoothingControl = AddAdjuster("Smoothing", "Reduces small, rapid input changes.", 0.30, 0.0, 0.9, 0.05, 2, ref y);
+        _smoothingControl = AddAdjusterAt("Smoothing", "Reduces small, rapid input changes.", 0.30, 0.0, 0.9, 0.05, 2, 0, y);
+        _blinkClampControl = AddAdjusterAt("Blink clamp", "Suppresses sudden downward gaze spikes (blinks). Recommended 0.12, 0 = off.", 0.0, 0.0, 0.50, 0.01, 2, 1, y);
         _smoothingControl.ValueChanged += value => SmoothingChanged?.Invoke(value);
-        _blinkClampControl = AddAdjuster("Blink clamp (rec. 0.12)", "Suppresses sudden downward gaze spikes (blinks). 0 = off.", 0.0, 0.0, 0.50, 0.01, 2, ref y);
         _blinkClampControl.ValueChanged += value => BlinkClampChanged?.Invoke(value);
+        y += 62;
 
-        AddSectionLabel("Response curve", ref y);
-        _curveButton = CreateButton("Curve: Linear", new Point(16, y), new Size(160, 30), Color.FromArgb(45, 45, 50));
+        // Response curve: the curve-type button (left) and its power adjuster
+        // (right) share a grid row, so no separate section label is needed.
+        _curveButton = CreateButton("Curve: Linear", new Point(16, y), new Size(164, 32), Color.FromArgb(45, 45, 50));
+        _curveButton.AccessibleName = "Cycle response curve";
         _curveButton.Click += (_, _) => CycleCurve();
         Controls.Add(_curveButton);
-        y += 34;
-        _curvePowerControl = AddAdjuster("Curve power", "Used by exponential and logarithmic curves.", 2.0, 0.1, 5.0, 0.1, 1, ref y);
+        var curvePowerTitle = new Label { Text = "Curve power", Location = new Point(192, y), Size = new Size(164, 18), Font = new Font("Segoe UI", 10f, FontStyle.Bold), ForeColor = Color.FromArgb(220, 220, 225) };
+        _curvePowerControl = new NumericAdjuster { Location = new Point(192, y + 18), Width = 164, AccessibleName = "Curve power", AccessibleDescription = "Used by exponential and logarithmic curves." };
+        _curvePowerControl.Initialize(2.0, 0.1, 5.0, 0.1, 1);
         _curvePowerControl.ValueChanged += value => CurvePowerChanged?.Invoke(value);
+        Controls.AddRange(new Control[] { curvePowerTitle, _curvePowerControl });
+        y += 62;
 
         AddSectionLabel("Virtual controller output", ref y);
         _xboxButton = CreateButton("Xbox 360", new Point(16, y), new Size(166, 32), Color.FromArgb(45, 45, 50));
@@ -256,9 +300,6 @@ public sealed class PopupPanel : Form
         _ds4Button.Click += (_, _) => SelectOutput(OutputType.DualShock4);
         Controls.AddRange(new Control[] { _xboxButton, _ds4Button });
         y += 36;
-        var outputHint = new Label { Text = "DualShock 4 mode does not use an XInput controller slot.", Location = new Point(16, y), Size = new Size(340, 18), ForeColor = Color.FromArgb(180, 180, 185), Font = new Font("Segoe UI", 9f) };
-        Controls.Add(outputHint);
-        y += 26;
 
         AddSectionLabel("Quick settings", ref y);
         _invertYButton = CreateButton("Vertical camera: Normal (click to invert)", new Point(16, y), new Size(340, 32), Color.FromArgb(45, 45, 50));
@@ -270,17 +311,17 @@ public sealed class PopupPanel : Form
         _hotkeyButton.Click += (_, _) => StartHotkeyCapture();
         _autoStartButton.Click += (_, _) => { _autoStart = !_autoStart; UpdateState(); AutoStartChanged?.Invoke(_autoStart); };
         Controls.AddRange(new Control[] { _invertYButton, _hotkeyButton, _autoStartButton });
-        y += 40;
-
-        _settingsNotice = new Label { Location = new Point(16, y), Size = new Size(340, 18), ForeColor = Color.FromArgb(130, 220, 150), Font = new Font("Segoe UI", 9f, FontStyle.Bold), TextAlign = ContentAlignment.MiddleCenter, Visible = false };
-        Controls.Add(_settingsNotice);
-        y += 24;
+        y += 36;
 
         var reset = CreateButton("Reset settings", new Point(16, y), new Size(164, 32), Color.FromArgb(85, 65, 30));
         var exit = CreateButton("Exit GazeStick", new Point(192, y), new Size(164, 32), Color.FromArgb(90, 40, 40));
         reset.Click += (_, _) => ResetRequested?.Invoke();
         exit.Click += (_, _) => ExitRequested?.Invoke();
         Controls.AddRange(new Control[] { reset, exit });
+        y += 36;
+
+        _settingsNotice = new Label { Location = new Point(16, y), Size = new Size(340, 18), ForeColor = Color.FromArgb(130, 220, 150), Font = new Font("Segoe UI", 9f, FontStyle.Bold), TextAlign = ContentAlignment.MiddleCenter, Visible = false };
+        Controls.Add(_settingsNotice);
 
         CaptureDesignLayout();
         UpdateState();
@@ -292,13 +333,13 @@ public sealed class PopupPanel : Form
         y += 22;
     }
 
-    private NumericAdjuster AddAdjuster(string label, string hint, double value, double min, double max, double step, int decimals, ref int y)
+    private NumericAdjuster AddAdjusterAt(string label, string hint, double value, double min, double max, double step, int decimals, int col, int y)
     {
-        var title = new Label { Text = label, Location = new Point(16, y), Size = new Size(340, 18), Font = new Font("Segoe UI", 10f, FontStyle.Bold), ForeColor = Color.FromArgb(220, 220, 225) };
-        var control = new NumericAdjuster { Location = new Point(16, y + 18), Width = 340, AccessibleName = label, AccessibleDescription = hint };
+        int x = col == 0 ? 16 : 192;
+        var title = new Label { Text = label, Location = new Point(x, y), Size = new Size(164, 18), Font = new Font("Segoe UI", 10f, FontStyle.Bold), ForeColor = Color.FromArgb(220, 220, 225) };
+        var control = new NumericAdjuster { Location = new Point(x, y + 18), Width = 164, AccessibleName = label, AccessibleDescription = hint };
         control.Initialize(value, min, max, step, decimals);
         Controls.AddRange(new Control[] { title, control });
-        y += 62;
         return control;
     }
 
@@ -308,6 +349,15 @@ public sealed class PopupPanel : Form
         button.FlatAppearance.BorderColor = Color.FromArgb(95, 95, 100);
         button.FlatAppearance.MouseOverBackColor = Color.FromArgb(Math.Min(color.R + 20, 255), Math.Min(color.G + 20, 255), Math.Min(color.B + 20, 255));
         return button;
+    }
+
+    private void SelectPreset(int index)
+    {
+        index = Math.Clamp(index, 0, 2);
+        if (_presetIndex == index) return;
+        _presetIndex = index;
+        UpdateState();
+        PresetChanged?.Invoke(index);
     }
 
     private void SelectOutput(OutputType outputType)
@@ -336,6 +386,8 @@ public sealed class PopupPanel : Form
         _autoStartButton.Text = _autoStart ? "Start with Windows: On (click to disable)" : "Start with Windows: Off (click to enable)";
         SetSelected(_xboxButton, _outputType == OutputType.Xbox360);
         SetSelected(_ds4Button, _outputType == OutputType.DualShock4);
+        for (int i = 0; i < _presetButtons.Length; i++)
+            SetSelected(_presetButtons[i], i == _presetIndex);
     }
 
     private static void SetSelected(Button button, bool selected)
