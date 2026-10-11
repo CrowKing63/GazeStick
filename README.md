@@ -76,7 +76,6 @@ Settings are saved to `%AppData%\GazeStick\settings.json`.
 | `toggleHotkey` | `F9` | Global tracking-toggle hotkey. |
 | `curveType` | `Linear` | Response curve shape (`Linear`, `Exponential`, `Sigmoid`). See [Presets](#presets). |
 | `curvePower` | 2.0 | Exponent for the `Exponential` and `Sigmoid` curves (1.0–5.0). |
-| `targetDisplay` | `""` (primary) | Device name of the display whose bounds define the viewport and stick neutral point (e.g. `\\.\DISPLAY1`). Empty uses the primary screen; a missing key in older settings files loads as empty. |
 
 ## Designed for combination
 

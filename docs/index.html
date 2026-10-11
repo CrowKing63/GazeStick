@@ -1295,9 +1295,9 @@ body {
         <p>Exponential moving average filtering removes jitter from raw gaze data for buttery smooth camera movement.</p>
       </div>
       <div class="feature-card">
-        <span class="icon">⚡</span>
-        <h3>Global Toggle <span class="badge">F9</span></h3>
-        <p>Press F9 anywhere to toggle eye tracking on or off. When off, the stick returns to neutral instantly.</p>
+        <span class="icon">🎛️</span>
+        <h3>Presets</h3>
+        <p>Three preset slots save the six adjustable values (deadzone, sensitivity, smoothing, blink clamp, curve type and power). Switch presets to snap between saved configurations; edits write straight back in real time.</p>
       </div>
       <div class="feature-card">
         <span class="icon">🔄</span>
@@ -1456,6 +1456,9 @@ body {
           <tr><td><code>deadzone</code></td><td>Circular deadzone radius (0.00–0.50)</td><td>0.10</td></tr>
           <tr><td><code>sensitivity</code></td><td>Stick output multiplier (0.1–5.0)</td><td>2.0</td></tr>
           <tr><td><code>smoothing</code></td><td>EMA smoothing factor (0.0–0.9)</td><td>0.30</td></tr>
+          <tr><td><code>blinkClamp</code></td><td>Downward gaze-spike suppression threshold (0.00–0.50)</td><td>0.0</td></tr>
+          <tr><td><code>curveType</code></td><td>Response curve shape (Linear, Exponential, Logarithmic)</td><td>Linear</td></tr>
+          <tr><td><code>curvePower</code></td><td>Exponent for Exponential/Logarithmic curves (1.0–5.0)</td><td>2.0</td></tr>
           <tr><td><code>invertY</code></td><td>Invert Y-axis output</td><td>false</td></tr>
           <tr><td><code>toggleHotkey</code></td><td>Global toggle hotkey</td><td>F9</td></tr>
           <tr><td><code>outputType</code></td><td>Virtual controller output mode</td><td>Xbox360</td></tr>
