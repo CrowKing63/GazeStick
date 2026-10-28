@@ -108,6 +108,12 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      # Fetch the Beam SDK DLL (required in every package). The msix job is a
+      # separate checkout from build, so it must fetch its own copy into lib/.
+      - name: Fetch Beam SDK
+        shell: pwsh
+        run: scripts/fetch-sdk.ps1
+
       # Self-contained single-file bundles the .NET runtime into GazeStick.exe so
       # the Store package has no runtime dependency. beam_eye_tracker_client.dll
       # is copied in by the csproj AfterBuild target as a separate file and is
