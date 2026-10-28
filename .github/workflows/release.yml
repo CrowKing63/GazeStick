@@ -70,6 +70,7 @@ jobs:
             |---------|-------------|
             | **GazeStick-portable-${{ env.RELEASE_VERSION }}-win-x64.zip** | Portable (no installation, just unzip and run). Requires .NET 8 Desktop Runtime and ViGEmBus. |
             | **GazeStick-setup-${{ env.RELEASE_VERSION }}.exe** | Installer (recommended for most users). Self-contained, includes .NET runtime. Checks for ViGEmBus. |
+            | **GazeStick-${{ env.RELEASE_VERSION }}.msix** | Microsoft Store package (self-contained). Install from the Microsoft Store, or sideload with `Add-AppxPackage`. |
 
             ### Prerequisites (for portable version)
             - [ViGEmBus driver](https://github.com/nefarius/ViGEmBus/releases/latest) (install and restart)
@@ -90,3 +91,55 @@ jobs:
             - **Non-Medical Device:** This software and the underlying Beam Eye Tracker SDK are not medical devices. They are not intended, nor should they be used, to replace professional medical advice, diagnosis, or treatment.
             - **High-Risk Use Prohibition:** This software must not be used in high-risk environments or safety-critical applications where any software malfunction or interruption could lead to personal injury, loss of life, or physical/environmental damage.
             - **Data Privacy:** Eye-tracking / gaze data is processed entirely locally on your machine and is used only for controller mapping. No gaze data is logged, recorded, or transmitted to any remote server without your explicit consent.
+
+  # MSIX (Microsoft Store) package — isolated job so a packing failure does not
+  # break the portable/installer release. needs: build, then adds only the .msix
+  # to the same release via overwrite (no race).
+  msix:
+    needs: build
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      # Self-contained single-file bundles the .NET runtime into GazeStick.exe so
+      # the Store package has no runtime dependency. beam_eye_tracker_client.dll
+      # is copied in by the csproj AfterBuild target as a separate file and is
+      # picked up when we copy the whole publish dir into staging.
+      - name: Publish (MSIX, self-contained single-file)
+        run: >
+          dotnet publish GazeStick.csproj
+          -c Release
+          -r win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:PublishReadyToRun=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true
+          -o dist/publish-msix
+
+      # The Beam SDK DLL must ship in every package (AGENTS.md). Fail fast if it is
+      # missing from the publish dir.
+      - name: Copy DLL (MSIX)
+        shell: pwsh
+        run: Copy-Item lib/beam_eye_tracker_client.dll dist/publish-msix/
+
+      # Stage + MakeAppx pack (unsigned; Microsoft re-signs on Store submission).
+      - name: Package MSIX
+        shell: pwsh
+        run: scripts/package-msix.ps1 -Version "${{ github.ref_name }}" -BuildDir dist/publish-msix
+
+      - name: Upload MSIX to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/GazeStick-*.msix
+          fail_on_unmatched_files: true
+          overwrite: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

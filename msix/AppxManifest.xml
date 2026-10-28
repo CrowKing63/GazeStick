@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  GazeStick MSIX package manifest (traditional desktop WinForms app packaged for the Microsoft Store).
+
+  - EntryPoint="Windows.FullTrustApplication": lets a Win32/WinForms desktop app run full-trust inside the MSIX.
+  - Publisher MUST be the developer account's Publisher ID GUID (CN=<GUID>), NOT a human-readable name such as CN=CrowKing63.
+    Same Microsoft Store developer account as AltKey, so the GUID is identical.
+  - TargetDeviceFamily MinVersion must be > 10.0.17134.0; we use 10.0.17763.0.
+  - runFullTrust capability: GazeStick drives a virtual gamepad (ViGEm), reads the webcam via the Beam SDK, and runs a
+    global hotkey + system-tray resident process, all of which require full trust.
+-->
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+         xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+         xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities">
+  <Identity Name="CrowKing63.GazeStick" Version="1.5.0.0" Publisher="CN=4359A7FD-BCFE-4383-BAF1-A1E18C9DE98A" ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>GazeStick</DisplayName>
+    <PublisherDisplayName>CrowKing63</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+    <Description>Turn your webcam into a virtual gamepad right stick using eye tracking.</Description>
+  </Properties>
+
+  <Resources>
+    <Resource Language="en-US" />
+  </Resources>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+
+  <Applications>
+    <Application Id="GazeStick" Executable="GazeStick.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="GazeStick"
+        Description="Turn your webcam into a virtual gamepad right stick using eye tracking."
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png"
+        BackgroundColor="#2D2D32" />
+    </Application>
+  </Applications>
+</Package>
