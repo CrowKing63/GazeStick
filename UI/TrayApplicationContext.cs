@@ -86,14 +86,30 @@ public sealed class TrayApplicationContext : ApplicationContext
         if (!_pad.Initialize(_settings.OutputType))
         {
             _trayIcon.Text = "GazeStick — ViGEm Error";
-            var result = MessageBox.Show(
-                "ViGEmBus driver is not installed or could not be reached.\n\n" +
-                "It is required for gamepad virtualization. Would you like to install it?",
-                "GazeStick - ViGEmBus Required",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Error);
-            if (result == DialogResult.Yes)
-                Process.Start(new ProcessStartInfo("https://github.com/nefarius/ViGEmBus/releases/latest") { UseShellExecute = true });
+            // Store (MSIX) builds must not direct users to acquire software from
+            // outside the Microsoft Store (certification policy 10.1.5), so show a
+            // neutral notice without an external download link. Portable builds keep
+            // the GitHub install prompt, which is fine outside the Store.
+            if (UpdateChecker.IsMsixInstall)
+            {
+                MessageBox.Show(
+                    "The ViGEmBus driver is required for GazeStick to create a virtual gamepad, but it was not found.\n\n" +
+                    "Please install the ViGEmBus driver, then restart GazeStick.",
+                    "GazeStick - ViGEmBus Required",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+            }
+            else
+            {
+                var result = MessageBox.Show(
+                    "ViGEmBus driver is not installed or could not be reached.\n\n" +
+                    "It is required for gamepad virtualization. Would you like to install it?",
+                    "GazeStick - ViGEmBus Required",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Error);
+                if (result == DialogResult.Yes)
+                    Process.Start(new ProcessStartInfo("https://github.com/nefarius/ViGEmBus/releases/latest") { UseShellExecute = true });
+            }
             return;
         }
 
