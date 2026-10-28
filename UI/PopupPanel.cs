@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Windows.Forms;
 using GazeStick.Models;
+using System.Diagnostics;
 
 namespace GazeStick.UI;
 
@@ -204,6 +205,21 @@ public sealed class PopupPanel : Form
 
         int y = 14;
         var title = new Label { Text = "GazeStick", Font = new Font("Segoe UI", 16f, FontStyle.Bold), ForeColor = Color.White, Location = new Point(16, y), AutoSize = true };
+        // Small donation link (Ko-fi) tucked next to the title. Opened as an
+        // external browser link — a pure donation, fine under Store policy.
+        var donate = new LinkLabel
+        {
+            Text = "Support",
+            Location = new Point(125, y + 3),
+            Size = new Size(90, 18),
+            TextAlign = ContentAlignment.MiddleLeft,
+            Font = new Font("Segoe UI", 9f),
+            LinkColor = Color.FromArgb(130, 185, 240),
+            ActiveLinkColor = Color.FromArgb(170, 210, 250),
+            LinkBehavior = LinkBehavior.AlwaysUnderline
+        };
+        donate.AccessibleName = "Support GazeStick (opens Ko-fi in browser)";
+        donate.LinkClicked += (_, _) => Process.Start(new ProcessStartInfo("https://ko-fi.com/crowking63") { UseShellExecute = true });
         _statusLabel = new Label { Location = new Point(260, y + 4), Size = new Size(96, 22), TextAlign = ContentAlignment.MiddleRight, Font = new Font("Segoe UI", 10f, FontStyle.Bold) };
         y += 32;
         _beamStatusLabel = new Label { Location = new Point(16, y), Size = new Size(340, 20), Font = new Font("Segoe UI", 10f), TextAlign = ContentAlignment.MiddleLeft };
@@ -214,7 +230,7 @@ public sealed class PopupPanel : Form
         _toggleButton.Click += (_, _) => ToggleChanged?.Invoke(!_isActive);
         y += 54;
 
-        Controls.AddRange(new Control[] { title, _statusLabel, _beamStatusLabel, _toggleButton });
+        Controls.AddRange(new Control[] { title, donate, _statusLabel, _beamStatusLabel, _toggleButton });
 
         // Target display selection is hidden: in practice the monitor Beam tracks
         // is always the Windows primary, so a separate picker only adds confusion.
