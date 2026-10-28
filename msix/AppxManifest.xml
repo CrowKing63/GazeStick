@@ -12,7 +12,7 @@
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
          xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
          xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities">
-  <Identity Name="CrowKing63.GazeStick" Version="1.5.0.0" Publisher="CN=4359A7FD-BCFE-4383-BAF1-A1E18C9DE98A" ProcessorArchitecture="x64" />
+  <Identity Name="CrowKing63.GazeStick" Version="1.5.1.0" Publisher="CN=4359A7FD-BCFE-4383-BAF1-A1E18C9DE98A" ProcessorArchitecture="x64" />
 
   <Properties>
     <DisplayName>GazeStick</DisplayName>
