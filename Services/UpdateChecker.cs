@@ -21,6 +21,13 @@ public sealed class UpdateChecker
 
     public static string CurrentVersionString => CurrentVersion.ToString();
 
+    /// <summary>
+    /// Store (MSIX) install detection. Store apps run under C:\Program Files\WindowsApps\
+    /// and are auto-updated by Microsoft Store, so the GitHub release check is skipped.
+    /// </summary>
+    public static bool IsMsixInstall =>
+        AppContext.BaseDirectory.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase);
+
     public static async Task<Version?> CheckForUpdateAsync()
     {
         try

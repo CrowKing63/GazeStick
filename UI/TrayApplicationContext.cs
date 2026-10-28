@@ -127,6 +127,10 @@ public sealed class TrayApplicationContext : ApplicationContext
 
     private async void CheckForUpdateAsync()
     {
+        // Store (MSIX) installs run under C:\Program Files\WindowsApps\ and are
+        // auto-updated by Microsoft Store, so skip the GitHub release check.
+        if (UpdateChecker.IsMsixInstall) return;
+
         try
         {
             var latest = await UpdateChecker.CheckForUpdateAsync();
