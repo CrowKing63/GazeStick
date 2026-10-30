@@ -29,7 +29,7 @@ public sealed class VirtualPadService : IVirtualPadService
         }
         catch (Exception ex)
         {
-            ErrorOccurred?.Invoke($"ViGEmBus initialization failed: {ex.Message}\nMake sure the driver is installed.");
+            ErrorOccurred?.Invoke($"ViGEmBus initialization failed: {ex.Message}");
             return false;
         }
 

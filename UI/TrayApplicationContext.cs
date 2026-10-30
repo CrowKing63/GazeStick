@@ -87,19 +87,11 @@ public sealed class TrayApplicationContext : ApplicationContext
         {
             _trayIcon.Text = "GazeStick — ViGEm Error";
             // Store (MSIX) builds must not direct users to acquire software from
-            // outside the Microsoft Store (certification policy 10.1.5), so show a
-            // neutral notice without an external download link. Portable builds keep
-            // the GitHub install prompt, which is fine outside the Store.
-            if (UpdateChecker.IsMsixInstall)
-            {
-                MessageBox.Show(
-                    "The ViGEmBus driver is required for GazeStick to create a virtual gamepad, but it was not found.\n\n" +
-                    "Please install the ViGEmBus driver, then restart GazeStick.",
-                    "GazeStick - ViGEmBus Required",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
-            }
-            else
+            // outside the Microsoft Store (certification policy 10.1.5), so they
+            // show no dialog at all — the tray text carries the state silently.
+            // Portable builds keep the GitHub install prompt, which is fine outside
+            // the Store.
+            if (!UpdateChecker.IsMsixInstall)
             {
                 var result = MessageBox.Show(
                     "ViGEmBus driver is not installed or could not be reached.\n\n" +
