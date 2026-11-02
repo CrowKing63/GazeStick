@@ -9,6 +9,12 @@
 </p>
 
 <p align="center">
+  <a href="https://apps.microsoft.com/detail/9N3B44LMZ1H1"><img src="https://img.shields.io/badge/Microsoft%20Store-Get%20it%20Free-0078D4?style=flat-square" alt="Microsoft Store" /></a>
+  <a href="https://github.com/CrowKing63/GazeStick/releases/latest"><img src="https://img.shields.io/github/v/release/CrowKing63/GazeStick?style=flat-square&color=2563EB" alt="Latest release" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/CrowKing63/GazeStick?style=flat-square" alt="License" /></a>
+</p>
+
+<p align="center">
   <img src="docs/assets/main.png" alt="GazeStick settings popup" width="280" />
 </p>
 
@@ -35,6 +41,16 @@ Change the output mode from the tray popup. GazeStick immediately disconnects th
 ## Presets
 
 The popup offers three presets (Preset 1 is selected by default). Each preset stores the six adjustable values: Deadzone, Sensitivity, Smoothing, Blink clamp, Curve type, and Curve power. Selecting a preset loads its saved values into the controls; editing any value while a preset is active writes it straight back to that preset in real time—there is no separate save button. All three presets start from the stock defaults, and upgrading from an older settings file seeds your existing values into Preset 1 so they are not lost.
+
+## Get GazeStick
+
+| Option | Best for | Link |
+|---|---|---|
+| **Microsoft Store** | Easiest — updates automatically through the Store | [Get it on Microsoft Store](https://apps.microsoft.com/detail/9N3B44LMZ1H1) |
+| **Installer** (.exe) | Guided setup; can auto-install ViGEmBus | [Latest release](https://github.com/CrowKing63/GazeStick/releases/latest) |
+| **Portable** (.zip) | No installer; extract and run | [Latest release](https://github.com/CrowKing63/GazeStick/releases/latest) |
+
+The Microsoft Store build updates itself through the Store, so no manual version management is needed. The GitHub release builds (Installer and Portable) check for new versions in-app.
 
 ## Setup and usage
 
