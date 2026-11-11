@@ -70,7 +70,7 @@ jobs:
             |---------|-------------|
             | **GazeStick-portable-${{ env.RELEASE_VERSION }}-win-x64.zip** | Portable (no installation, just unzip and run). Requires .NET 8 Desktop Runtime and ViGEmBus. |
             | **GazeStick-setup-${{ env.RELEASE_VERSION }}.exe** | Installer (recommended for most users). Self-contained, includes .NET runtime. Checks for ViGEmBus. |
-            | **GazeStick-${{ env.RELEASE_VERSION }}.msix** | Microsoft Store package (self-contained). Install from the Microsoft Store, or sideload with `Add-AppxPackage`. |
+            | **GazeStick-${{ env.RELEASE_VERSION }}.msix** | Microsoft Store submission artifact (unsigned — cannot be installed directly on a normal PC). Use the installer or portable zip instead. |
 
             ### Prerequisites (for portable version)
             - [ViGEmBus driver](https://github.com/nefarius/ViGEmBus/releases/latest) (install and restart)
