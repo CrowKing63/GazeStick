@@ -70,7 +70,6 @@ jobs:
             |---------|-------------|
             | **GazeStick-portable-${{ env.RELEASE_VERSION }}-win-x64.zip** | Portable (no installation, just unzip and run). Requires .NET 8 Desktop Runtime and ViGEmBus. |
             | **GazeStick-setup-${{ env.RELEASE_VERSION }}.exe** | Installer (recommended for most users). Self-contained, includes .NET runtime. Checks for ViGEmBus. |
-            | **GazeStick-${{ env.RELEASE_VERSION }}.msix** | Microsoft Store submission artifact (unsigned — cannot be installed directly on a normal PC). Use the installer or portable zip instead. |
 
             ### Prerequisites (for portable version)
             - [ViGEmBus driver](https://github.com/nefarius/ViGEmBus/releases/latest) (install and restart)
@@ -93,13 +92,10 @@ jobs:
             - **Data Privacy:** Eye-tracking / gaze data is processed entirely locally on your machine and is used only for controller mapping. No gaze data is logged, recorded, or transmitted to any remote server without your explicit consent.
 
   # MSIX (Microsoft Store) package — isolated job so a packing failure does not
-  # break the portable/installer release. needs: build, then adds only the .msix
-  # to the same release via overwrite (no race).
+  # break the portable/installer release. Not uploaded to GitHub Releases; kept
+  # only as a workflow artifact for Store submission (unsigned).
   msix:
-    needs: build
     runs-on: windows-latest
-    permissions:
-      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -141,11 +137,8 @@ jobs:
         shell: pwsh
         run: scripts/package-msix.ps1 -Version "${{ github.ref_name }}" -BuildDir dist/publish-msix
 
-      - name: Upload MSIX to Release
-        uses: softprops/action-gh-release@v2
+      - name: Upload MSIX as workflow artifact (Store submission)
+        uses: actions/upload-artifact@v4
         with:
-          files: dist/GazeStick-*.msix
-          fail_on_unmatched_files: true
-          overwrite: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: GazeStick-msix-${{ github.ref_name }}
+          path: dist/GazeStick-*.msix
